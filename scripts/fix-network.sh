@@ -99,9 +99,9 @@ fi
 
 echo ""
 echo "🔑 Testing Pi-hole admin access:"
-if curl -k -s -o /dev/null -w "%{http_code}" "https://localhost/admin" | grep -q "200"; then
+if curl -k -s -o /dev/null -w "%{http_code}" "https://localhost/pihole/admin" | grep -q "200"; then
     echo "✅ Pi-hole admin interface accessible"
-    echo "   Try login at: https://$HOSTNAME.$LOCAL_DOMAIN/admin"
+    echo "   Try login at: https://$HOSTNAME.$LOCAL_DOMAIN/pihole/admin"
     echo "   Password: $PIHOLE_PASSWORD"
 else
     echo "❌ Pi-hole admin interface not accessible"
@@ -112,5 +112,5 @@ echo "✅ Network repair complete!"
 echo ""
 echo "🧪 Next steps:"
 echo "1. Run ./scripts/diagnose.sh to verify all fixes"
-echo "2. Test login at https://$HOSTNAME.$LOCAL_DOMAIN/admin"
+echo "2. Test login at https://$HOSTNAME.$LOCAL_DOMAIN/pihole/admin"
 echo "3. If still failing, check logs: ./scripts/manage.sh logs"

@@ -99,7 +99,7 @@ fi
 echo ""
 echo "🔑 Access Information:"
 echo "   🔍 Search: https://$HOSTNAME.$LOCAL_DOMAIN (or https://$SERVER_IP)"
-echo "   🛡️ Pi-hole Admin: https://$HOSTNAME.$LOCAL_DOMAIN/admin"
+echo "   🛡️ Pi-hole Admin: https://$HOSTNAME.$LOCAL_DOMAIN/pihole/admin"
 echo "   🔑 Pi-hole Password: $PIHOLE_PASSWORD"
 
 echo ""

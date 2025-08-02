@@ -116,11 +116,11 @@ chmod +x scripts/*.sh
 ### 4. **Configure Router DNS**
 - **Router DNS**: Set to your Pi's IP address  
 - **DHCP Reservation**: Reserve Pi's MAC for static IP (enables hostname access)
-https://otsi.local/api/auth
+
 ### 5. **Access Your Services**
 After setup, access using either hostname or IP:
 - 🔍 **Private Search**: `https://otsi.local` or `https://192.168.1.100`
-- 🛡️ **Pi-hole Admin**: `https://otsi.local/admin` or `https://192.168.1.100/admin`
+- 🛡️ **Pi-hole Admin**: `https://otsi.local/pihole/admin` or `https://192.168.1.100/pihole/admin`
 - ❤️ **Health Check**: `https://otsi.local/health` or `https://192.168.1.100/health`
 
 > **Default Pi-hole password**: `secure123` (change during configuration!)
@@ -145,6 +145,8 @@ After setup, access using either hostname or IP:
 
 🔍 Private Search: https://otsi.local (or https://192.168.1.100)
    → No tracking, no ads, fast results
+
+🛡️ Network Admin: https://otsi.local/pihole/admin (hosts only)
 
 ⚠️ Security Notice: Click "Accept" on SSL warning (safe, local certificate)
 ```
