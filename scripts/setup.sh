@@ -90,6 +90,9 @@ docker compose up -d
 # Wait for services to start
 echo "Waiting for services to start..."
 sleep 10
+echo "Setting Pi-hole admin password..."
+docker exec pihole pihole setpassword "$PIHOLE_PASSWORD"
+echo "✅ Pi-hole password configured!"
 
 # Check if containers are running
 echo "Checking container status..."
