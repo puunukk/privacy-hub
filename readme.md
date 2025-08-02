@@ -42,16 +42,16 @@ Perfect for **home networks**, **Airbnb properties**, or anywhere you want **pri
 ## 🌊 **Network Flow**
 
 ```
-External Network → Pi (ONLY 53, 80, 443)
+Local Network → Pi (ONLY 53, 80, 443)
                     ↓
                   NGINX reverse proxy
                     ↓
-  ┌─────────────────────────────────────┐
-  │  Internal Docker Network            │
-  │                                     │
-  │  pihole:53,80  ←→  searxng:8080     │
-  │  (not exposed)     (not exposed)    │
-  └─────────────────────────────────────┘
+  ┌─────────────────────────────────┐
+  │ Internal Docker Network         │
+  │                                 │
+  │ pihole:53,80  ←→  searxng:8080  │
+  │ (not exposed)     (not exposed) │
+  └─────────────────────────────────┘
 ```
 
 ## 🚀 **Quick Start**
@@ -66,6 +66,23 @@ External Network → Pi (ONLY 53, 80, 443)
 ```
 
 ### 2. **Install Dependencies**
+
+**On your computer (for SSL without warnings):**
+```bash
+# Windows (PowerShell as Admin):
+choco install mkcert
+mkcert -install
+
+# macOS:
+brew install mkcert
+mkcert -install
+
+# Linux:
+# Download from https://github.com/FiloSottile/mkcert/releases
+mkcert -install
+```
+
+**On your Raspberry Pi:**
 ```bash
 ssh pi@otsi.local
 
@@ -73,6 +90,13 @@ ssh pi@otsi.local
 sudo apt update && sudo apt upgrade -y
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker pi
+
+# Install mkcert for trusted SSL certificates
+curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/arm64"
+chmod +x mkcert-v*-linux-arm64
+sudo mv mkcert-v*-linux-arm64 /usr/local/bin/mkcert
+mkcert -install
+
 sudo reboot
 ```
 
@@ -92,7 +116,7 @@ chmod +x scripts/*.sh
 ### 4. **Configure Router DNS**
 - **Router DNS**: Set to your Pi's IP address  
 - **DHCP Reservation**: Reserve Pi's MAC for static IP (enables hostname access)
-
+https://otsi.local/api/auth
 ### 5. **Access Your Services**
 After setup, access using either hostname or IP:
 - 🔍 **Private Search**: `https://otsi.local` or `https://192.168.1.100`

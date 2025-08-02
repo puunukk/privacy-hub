@@ -89,6 +89,15 @@ fi
 # Clean up
 rm get-docker.sh
 
+# Optional: Install mkcert for SSL certificates without browser warnings
+# This eliminates the "unsafe" SSL certificate warnings completely
+echo "📋 Installing mkcert for trusted SSL certificates..."
+curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/arm64"
+chmod +x mkcert-v*-linux-arm64
+sudo mv mkcert-v*-linux-arm64 /usr/local/bin/mkcert
+mkcert -install
+echo "✅ mkcert installed - no more SSL warnings!"
+
 # Reboot to apply group changes
 sudo reboot
 ```

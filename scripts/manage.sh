@@ -103,6 +103,11 @@ case "$1" in
         echo "  $0 logs pihole     # View pihole logs"
         echo "  $0 update          # Update all containers"
         echo "  $0 backup          # Create configuration backup"
+        echo "  $0 ssl             # Upgrade to trusted SSL certificates"
         exit 1
+        ;;
+    "ssl")
+        echo -e "${YELLOW}Upgrading SSL certificates...${NC}"
+        ./scripts/upgrade-ssl.sh
         ;;
 esac 

@@ -27,12 +27,30 @@ mkdir -p nginx/ssl
 # Generate SSL certificates for nginx
 echo "🔒 Setting up SSL certificates..."
 if [ ! -f "nginx/ssl/nginx.crt" ]; then
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-        -keyout nginx/ssl/nginx.key \
-        -out nginx/ssl/nginx.crt \
-        -subj "/C=FI/ST=State/L=City/O=Home/CN=*.$LOCAL_DOMAIN" \
-        >/dev/null 2>&1
-    echo "✅ SSL certificates generated"
+    # Try to use mkcert for locally trusted certificates first
+    if command -v mkcert >/dev/null 2>&1; then
+        echo "📋 Using mkcert for locally trusted certificates..."
+        cd nginx/ssl
+        mkcert -key-file nginx.key -cert-file nginx.crt \
+            "$HOSTNAME.$LOCAL_DOMAIN" \
+            "$SERVER_IP" \
+            localhost \
+            127.0.0.1 \
+            "::1" >/dev/null 2>&1
+        cd ../..
+        echo "✅ Locally trusted SSL certificates generated"
+        echo "💡 No browser warnings! Certificates are automatically trusted."
+    else
+        echo "📋 mkcert not found, using self-signed certificates..."
+        echo "💡 Install mkcert for browser-trusted certificates: https://github.com/FiloSottile/mkcert"
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -keyout nginx/ssl/nginx.key \
+            -out nginx/ssl/nginx.crt \
+            -subj "/C=FI/ST=State/L=City/O=Home/CN=*.$LOCAL_DOMAIN" \
+            >/dev/null 2>&1
+        echo "✅ Self-signed SSL certificates generated"
+        echo "⚠️  Browser will show security warning (click Advanced → Proceed)"
+    fi
 else
     echo "✅ SSL certificates already exist"
 fi
