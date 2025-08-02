@@ -104,10 +104,20 @@ case "$1" in
         echo "  $0 update          # Update all containers"
         echo "  $0 backup          # Create configuration backup"
         echo "  $0 ssl             # Upgrade to trusted SSL certificates"
+        echo "  $0 password        # Reset/manage Pi-hole admin password"
+        echo "  $0 diagnose        # Run diagnostic checks"
         exit 1
         ;;
     "ssl")
         echo -e "${YELLOW}Upgrading SSL certificates...${NC}"
         ./scripts/upgrade-ssl.sh
+        ;;
+    "password"|"passwd")
+        echo -e "${YELLOW}Managing Pi-hole password...${NC}"
+        ./scripts/reset-pihole-password.sh
+        ;;
+    "diagnose"|"diag")
+        echo -e "${YELLOW}Running diagnostics...${NC}"
+        ./scripts/diagnose.sh
         ;;
 esac 
