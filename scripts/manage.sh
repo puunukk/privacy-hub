@@ -93,22 +93,6 @@ case "$1" in
         echo -e "${YELLOW}Starting all services...${NC}"
         docker compose up -d
         ;;
-    *)
-        echo -e "${RED}Usage: $0 {status|restart [service]|logs [service]|update|backup|start|stop}${NC}"
-        echo ""
-        echo "Examples:"
-        echo "  $0 status          # Show service status"
-        echo "  $0 restart         # Restart all services"
-        echo "  $0 restart nginx   # Restart only nginx"
-        echo "  $0 logs pihole     # View pihole logs"
-        echo "  $0 update          # Update all containers"
-        echo "  $0 backup          # Create configuration backup"
-        echo "  $0 ssl             # Upgrade to trusted SSL certificates"
-        echo "  $0 password        # Reset/manage Pi-hole admin password"
-        echo "  $0 diagnose        # Run diagnostic checks"
-        echo "  $0 network         # Fix network connectivity issues"
-        exit 1
-        ;;
     "ssl")
         echo -e "${YELLOW}Upgrading SSL certificates...${NC}"
         ./scripts/upgrade-ssl.sh
@@ -124,5 +108,21 @@ case "$1" in
     "network"|"net")
         echo -e "${YELLOW}Fixing network connectivity...${NC}"
         ./scripts/fix-network.sh
+        ;;
+    *)
+        echo -e "${RED}Usage: $0 {status|restart [service]|logs [service]|update|backup|start|stop|ssl|password|diagnose|network}${NC}"
+        echo ""
+        echo "Examples:"
+        echo "  $0 status          # Show service status"
+        echo "  $0 restart         # Restart all services"
+        echo "  $0 restart nginx   # Restart only nginx"
+        echo "  $0 logs pihole     # View pihole logs"
+        echo "  $0 update          # Update all containers"
+        echo "  $0 backup          # Create configuration backup"
+        echo "  $0 ssl             # Upgrade to trusted SSL certificates"
+        echo "  $0 password        # Reset/manage Pi-hole admin password"
+        echo "  $0 diagnose        # Run diagnostic checks"
+        echo "  $0 network         # Fix network connectivity issues"
+        exit 1
         ;;
 esac 
