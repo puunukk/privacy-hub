@@ -1,7 +1,7 @@
 use_default_settings: true
 
 server:
-  secret_key: "CHANGE_ME_TO_RANDOM_50_CHARS"
+  secret_key: !ENV [SEARXNG_SECRET_KEY, "CHANGE_ME_TO_RANDOM_50_CHARS"]
   bind_address: "0.0.0.0"
   port: 8080
   # No base_url - let NGINX handle it
@@ -9,12 +9,12 @@ server:
   public_instance: false
 
 search:
-  safe_search: 1
+  safe_search: !ENV [SEARXNG_SAFE_SEARCH, 1]
   autocomplete: ""
-  default_lang: "en"
+  default_lang: !ENV [SEARXNG_DEFAULT_LANG, "en"]
 
 ui:
-  default_theme: simple
+  default_theme: !ENV [SEARXNG_DEFAULT_THEME, "simple"]
   simple_style: dark
   query_in_title: true
   infinite_scroll: false

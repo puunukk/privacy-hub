@@ -31,6 +31,10 @@ services:
     # NO PORTS EXPOSED TO HOST - only internal
     environment:
       - SEARXNG_BASE_URL=https://${SERVER_IP}/
+      - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY:-auto-generated}
+      - SEARXNG_DEFAULT_THEME=${SEARXNG_DEFAULT_THEME:-simple}
+      - SEARXNG_SAFE_SEARCH=${SEARXNG_SAFE_SEARCH:-1}
+      - SEARXNG_DEFAULT_LANG=${SEARXNG_DEFAULT_LANG:-en}
     volumes:
       - './searxng/data:/etc/searxng'
     tmpfs:
