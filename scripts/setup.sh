@@ -8,6 +8,19 @@ mkdir -p pihole/{data,dnsmasq}
 mkdir -p searxng/data
 mkdir -p nginx/ssl
 
+# Generate SSL certificates for nginx (since volume mount overrides container certs)
+echo "Generating SSL certificates..."
+if [ ! -f "nginx/ssl/nginx.crt" ]; then
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout nginx/ssl/nginx.key \
+        -out nginx/ssl/nginx.crt \
+        -subj "/C=FI/ST=State/L=City/O=Home/CN=*.local" \
+        >/dev/null 2>&1
+    echo "✅ SSL certificates generated"
+else
+    echo "✅ SSL certificates already exist"
+fi
+
 # Generate random secret for SearXNG and create settings in data directory
 RANDOM_SECRET=$(openssl rand -hex 32)
 
