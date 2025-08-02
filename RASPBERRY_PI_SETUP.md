@@ -14,20 +14,48 @@
 
 ---
 
+## 🔄 **Access Methods: Hostname vs IP Address**
+
+**Privacy Hub supports both access methods - choose what works best for your setup:**
+
+### 🏷️ **Hostname Access** (`https://otsi.local`)
+✅ **User-friendly** - Easy to remember  
+✅ **Professional** - Looks like a real website  
+✅ **Portable** - Works even if IP changes  
+⚠️ **Requires** - DHCP reservation setup in router  
+
+### 🔢 **IP Address Access** (`https://192.168.1.100`)
+✅ **Always works** - No router configuration needed  
+✅ **Immediate** - Available right after setup  
+✅ **Simple** - Direct network access  
+⚠️ **Changes** - If Pi gets different IP address  
+
+💡 **Recommendation**: Set up both! Use IP initially, then add hostname for better user experience.
+
+---
+
 ## 🚀 **Step 1: Prepare Raspberry Pi**
 
 ### 1.1 Flash Raspberry Pi OS
 ```bash
 # Download Raspberry Pi Imager
 # Flash "Raspberry Pi OS Lite (64-bit)" to SD card
-# Enable SSH in advanced settings
-# Set username: pi, password: (your choice)
+# ⚠️ IMPORTANT: Click gear icon for advanced settings:
+#   ✅ Set hostname: otsi
+#   ✅ Enable SSH
+#   ✅ Set username: pi, password: (your choice)
+#   ✅ Configure WiFi (if needed)
+#   ✅ Set locale settings
 ```
+
+💡 **Pro Tip**: Setting hostname to "otsi" allows access via `https://otsi.local` instead of remembering IP addresses!
 
 ### 1.2 First Boot Setup
 ```bash
-# SSH into your Pi
-ssh pi@your-pi-ip
+# SSH into your Pi (choose your preferred method):
+ssh pi@otsi.local          # Using hostname (recommended)
+# OR
+ssh pi@192.168.1.100       # Using IP address
 
 # Update system
 sudo apt update && sudo apt upgrade -y
@@ -87,15 +115,26 @@ The setup script will:
 
 ## 🌐 **Step 4: Configure Router DNS**
 
-### Option A: Router-wide DNS (Recommended)
+### Step 4.1: Set Fixed IP Address (Highly Recommended)
 1. **Access router admin panel** (usually `192.168.1.1`)
-2. **Find DNS/DHCP settings**
-3. **Set Primary DNS**: `YOUR_PI_IP` (e.g., `192.168.1.100`)
-4. **Set Secondary DNS**: `1.1.1.1`
-5. **Save and reboot router**
+2. **Find DHCP Reservations** or **Static IP** settings
+3. **Find your Pi** in connected devices (hostname: "otsi")
+4. **Note the MAC address** (usually starts with DC:A6:32, E4:5F:01, or B8:27:EB for Pi)
+5. **Create DHCP reservation**: Assign Pi's MAC to fixed IP (e.g., `192.168.1.100`)
+6. **Save settings**
+
+💡 **Why Fixed IP?** Prevents IP changes that would break DNS configuration.
+
+### Step 4.2: Router-wide DNS (Recommended)
+1. **Find DNS/DHCP settings** in router admin
+2. **Set Primary DNS**: `YOUR_PI_FIXED_IP` (e.g., `192.168.1.100`)
+3. **Set Secondary DNS**: `1.1.1.1`
+4. **Save and reboot router**
 
 ### Option B: Device-specific DNS
 On each device, manually set DNS to your Pi's IP address.
+
+🎯 **Result**: All devices automatically get ad-blocking + you can use both `otsi.local` hostname AND IP access!
 
 ---
 
@@ -106,15 +145,24 @@ After setup completes, you'll see:
 ```
 🎉 Privacy Hub is ready!
 
-🔍 Search (Homepage): https://192.168.1.100
-🛡️ Pi-hole Admin: https://192.168.1.100/admin
-❤️ Health Check: https://192.168.1.100/health
+🔍 Search (Homepage): https://otsi.local (or https://192.168.1.100)
+🛡️ Pi-hole Admin: https://otsi.local/admin (or https://192.168.1.100/admin)
+❤️ Health Check: https://otsi.local/health (or https://192.168.1.100/health)
 ```
 
-### First Access
-1. **Open browser** → `https://your-pi-ip`
-2. **Accept SSL warning** (self-signed certificate)
+### First Access - Choose Your Preferred Method
+
+#### Option A: Using Hostname (Recommended)
+1. **Open browser** → `https://otsi.local`
+2. **Accept SSL warning** (self-signed certificate - this is safe!)
 3. **Bookmark** for easy access
+
+#### Option B: Using IP Address
+1. **Open browser** → `https://192.168.1.100` (use your actual Pi IP)
+2. **Accept SSL warning** (self-signed certificate - this is safe!)
+3. **Bookmark** for easy access
+
+💡 **Pro Tip**: Hostname approach is more user-friendly, but IP addresses work immediately without router configuration.
 
 ---
 
@@ -272,14 +320,27 @@ sudo apt update && sudo apt upgrade -y
 ## 🏠 **For Airbnb/Guest Networks**
 
 ### Guest Instructions
+
+#### Option A: Using Hostname (if DHCP reservation set)
 ```markdown
 📱 **WiFi Password**: [your-wifi-password]
 
-🔍 **Private Search**: https://[pi-ip]
+🔍 **Private Search**: https://otsi.local
    - No tracking, private search
    - Ad-free browsing automatically
 
-⚠️ **SSL Warning**: Click "Advanced" → "Proceed" (safe)
+⚠️ **SSL Warning**: Click "Advanced" → "Proceed" (safe, local certificate)
+```
+
+#### Option B: Using IP Address
+```markdown
+📱 **WiFi Password**: [your-wifi-password]
+
+🔍 **Private Search**: https://192.168.1.100
+   - No tracking, private search  
+   - Ad-free browsing automatically
+
+⚠️ **SSL Warning**: Click "Advanced" → "Proceed" (safe, local certificate)
 ```
 
 ### Host Benefits

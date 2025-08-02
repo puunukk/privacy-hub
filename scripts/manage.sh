@@ -15,10 +15,14 @@ show_status() {
     
     # Show local IP
     LOCAL_IP=$(hostname -I | cut -d' ' -f1)
+    HOSTNAME=$(hostname)
     echo -e "${GREEN}Access URLs:${NC}"
     echo "🔍 Search: https://$LOCAL_IP"
     echo "🛡️ Pi-hole: https://$LOCAL_IP/admin"
     echo "❤️ Health: https://$LOCAL_IP/health"
+    echo "🔍 Search: https://$HOSTNAME.local (or https://$LOCAL_IP)"
+    echo "🛡️ Pi-hole: https://$HOSTNAME.local/admin"
+    echo "❤️ Health: https://$HOSTNAME.local/health"
 }
 
 # Function to restart services
