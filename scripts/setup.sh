@@ -8,9 +8,25 @@ mkdir -p pihole/{data,dnsmasq}
 mkdir -p searxng/data
 mkdir -p nginx/ssl
 
-# Generate random secret for SearXNG
+# Generate random secret for SearXNG and create settings in data directory
 RANDOM_SECRET=$(openssl rand -hex 32)
-sed -i "s/CHANGE_ME_TO_RANDOM_50_CHARS/$RANDOM_SECRET/" searxng/settings.yml
+
+# Create settings.yml in the data directory (which gets mounted to container)
+cp searxng/settings.yml searxng/data/settings.yml
+sed -i "s/CHANGE_ME_TO_RANDOM_50_CHARS/$RANDOM_SECRET/" searxng/data/settings.yml
+
+# Set proper permissions for all data directories
+echo "Setting up permissions..."
+
+# SearXNG container runs as UID 977 (searxng user)
+if command -v sudo >/dev/null 2>&1; then
+    sudo chown -R 977:977 searxng/data/
+    # Ensure other directories are accessible
+    sudo chown -R $USER:$USER pihole/ nginx/ || true
+else
+    chown -R 977:977 searxng/data/
+    chown -R $USER:$USER pihole/ nginx/ || true
+fi
 
 # Detect local IP automatically
 LOCAL_IP=$(hostname -I | cut -d' ' -f1)
@@ -26,7 +42,15 @@ docker compose up -d
 
 # Wait for services to start
 echo "Waiting for services to start..."
-sleep 30
+sleep 10
+
+# Check if containers are running
+echo "Checking container status..."
+docker compose ps
+
+# Show any immediate errors
+echo "Checking for startup errors..."
+docker compose logs --tail=20
 
 echo ""
 echo "🎉 Privacy Hub is ready!"
