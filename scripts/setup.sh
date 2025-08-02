@@ -16,7 +16,7 @@ fi
 source .env
 
 echo "📍 Using server IP: $SERVER_IP"
-echo "🏷️  Using hostname: $HOSTNAME.$LOCAL_DOMAIN"
+echo "🏷️  Using hostname: $HOSTNAME (accessible as $HOSTNAME.$LOCAL_DOMAIN)"
 
 # Create directories
 echo "📁 Creating directories..."
@@ -37,6 +37,15 @@ else
     echo "✅ SSL certificates already exist"
 fi
 
+# Set proper permissions first
+echo "🔧 Setting permissions..."
+if command -v sudo >/dev/null 2>&1; then
+    sudo chown -R $USER:$USER pihole/ nginx/ searxng/ || true
+    # SearXNG data directory will be set after file copy
+else
+    chown -R $USER:$USER pihole/ nginx/ searxng/ || true
+fi
+
 # Generate random secret for SearXNG
 echo "🔐 Configuring SearXNG..."
 RANDOM_SECRET=$(openssl rand -hex 32)
@@ -45,14 +54,12 @@ RANDOM_SECRET=$(openssl rand -hex 32)
 cp searxng/settings.yml searxng/data/settings.yml
 sed -i "s/CHANGE_ME_TO_RANDOM_50_CHARS/$RANDOM_SECRET/" searxng/data/settings.yml
 
-# Set proper permissions
-echo "🔧 Setting permissions..."
+# Set SearXNG permissions after file operations
+echo "🔧 Setting SearXNG container permissions..."
 if command -v sudo >/dev/null 2>&1; then
     sudo chown -R 977:977 searxng/data/
-    sudo chown -R $USER:$USER pihole/ nginx/ || true
 else
     chown -R 977:977 searxng/data/
-    chown -R $USER:$USER pihole/ nginx/ || true
 fi
 
 # Build and start services

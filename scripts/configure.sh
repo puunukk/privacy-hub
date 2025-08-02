@@ -29,7 +29,7 @@ echo "📝 Configuration Setup (press Enter for defaults):"
 
 prompt_with_default "Pi hostname" "otsi" HOSTNAME
 prompt_with_default "Local domain" "local" LOCAL_DOMAIN
-prompt_with_default "Timezone" "Europe/Helsinki" TZ
+prompt_with_default "Timezone" "Europe/Tallinn" TZ
 prompt_with_default "Pi-hole admin password" "secure123" PIHOLE_PASSWORD
 
 if [ "$PIHOLE_PASSWORD" = "secure123" ]; then
