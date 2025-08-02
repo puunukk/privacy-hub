@@ -7,7 +7,11 @@ RUN mkdir -p /var/log/searxng && \
 # Create the directory that will be mounted
 RUN mkdir -p /etc/searxng && chown -R searxng:searxng /etc/searxng
 
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 8080
 
-# Default SearXNG command
-CMD ["searxng-run"] 
+# Use our entrypoint script
+CMD ["/entrypoint.sh"] 

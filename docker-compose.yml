@@ -20,6 +20,11 @@ services:
     cap_add:
       - NET_ADMIN
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/admin/api.php?version"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     networks:
       - internal
 
@@ -63,8 +68,10 @@ services:
       - /tmp
     restart: unless-stopped
     depends_on:
-      - pihole
-      - searxng
+      pihole:
+        condition: service_healthy
+      searxng:
+        condition: service_started
     networks:
       - internal
 
