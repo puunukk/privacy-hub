@@ -1,0 +1,6 @@
+# Custom DNS entries for Pi-hole
+# Format: IP_ADDRESS DOMAIN_NAME
+
+# Local services
+127.0.0.1 pihole.local
+127.0.0.1 searxng.local 

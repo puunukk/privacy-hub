@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # Pi-hole - INTERNAL ONLY (no exposed ports)
+  pihole:
+    build: ./pihole
+    container_name: pihole
+    hostname: pihole
+    # NO PORTS EXPOSED TO HOST - only internal
+    environment:
+      TZ: 'Europe/Helsinki'
+      WEBPASSWORD: 'secure123'  # Change this!
+      FTLCONF_LOCAL_IPV4: ${SERVER_IP}
+      PIHOLE_DNS_: '1.1.1.1;1.0.0.1'
+      VIRTUAL_HOST: pihole.local
+    volumes:
+      - './pihole/data:/etc/pihole'
+      - './pihole/dnsmasq:/etc/dnsmasq.d'
+    tmpfs:
+      - /var/log
+      - /tmp
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    networks:
+      - internal
+
+  # SearXNG - INTERNAL ONLY (no exposed ports)  
+  searxng:
+    build: ./searxng
+    container_name: searxng
+    hostname: searxng
+    # NO PORTS EXPOSED TO HOST - only internal
+    environment:
+      - SEARXNG_BASE_URL=https://${SERVER_IP}/
+    volumes:
+      - './searxng/data:/etc/searxng'
+    tmpfs:
+      - /var/log
+      - /tmp
+      - /var/cache
+    restart: unless-stopped
+    networks:
+      - internal
+
+  # NGINX - ONLY PUBLIC-FACING SERVICE
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    hostname: nginx
+    ports:
+      # ONLY these ports exposed to network
+      - "53:53/tcp"      # DNS
+      - "53:53/udp"      # DNS  
+      - "80:80"          # HTTP
+      - "443:443"        # HTTPS
+    volumes:
+      - './nginx/ssl:/etc/nginx/ssl'
+    tmpfs:
+      - /var/log/nginx
+      - /tmp
+    restart: unless-stopped
+    depends_on:
+      - pihole
+      - searxng
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+    # No need to specify IP ranges - Docker handles it 
