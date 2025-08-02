@@ -109,8 +109,16 @@ case "$1" in
         echo -e "${YELLOW}Fixing network connectivity...${NC}"
         ./scripts/fix-network.sh
         ;;
+    "test")
+        echo -e "${YELLOW}Running deep connectivity tests...${NC}"
+        ./scripts/test-connectivity.sh
+        ;;
+    "debug")
+        echo -e "${YELLOW}Debugging Pi-hole HTTP server...${NC}"
+        ./scripts/debug-pihole-http.sh
+        ;;
     *)
-        echo -e "${RED}Usage: $0 {status|restart [service]|logs [service]|update|backup|start|stop|ssl|password|diagnose|network}${NC}"
+        echo -e "${RED}Usage: $0 {status|restart [service]|logs [service]|update|backup|start|stop|ssl|password|diagnose|network|test|debug}${NC}"
         echo ""
         echo "Examples:"
         echo "  $0 status          # Show service status"
@@ -123,6 +131,8 @@ case "$1" in
         echo "  $0 password        # Reset/manage Pi-hole admin password"
         echo "  $0 diagnose        # Run diagnostic checks"
         echo "  $0 network         # Fix network connectivity issues"
+        echo "  $0 test            # Deep connectivity testing"  
+        echo "  $0 debug           # Debug Pi-hole HTTP server"
         exit 1
         ;;
 esac 
