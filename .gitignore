@@ -1,0 +1,35 @@
+# Environment variables and secrets
+.env
+
+# Keep the example file
+!.env.example
+
+# Runtime data and logs
+pihole/data/
+searxng/data/
+nginx/ssl/
+
+# Backup files
+backups/
+
+# Docker volumes and temporary files
+docker-compose.override.yml
+*.log
+*.tmp
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Keep configuration templates but ignore generated files
+!pihole/custom.list
+!searxng/settings.yml
+!nginx/nginx.conf
+!scripts/

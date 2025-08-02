@@ -6,11 +6,11 @@ services:
     hostname: pihole
     # NO PORTS EXPOSED TO HOST - only internal
     environment:
-      TZ: 'Europe/Helsinki'
-      WEBPASSWORD: 'secure123'  # Change this!
+      TZ: ${TZ:-Europe/Helsinki}
+      WEBPASSWORD: ${PIHOLE_PASSWORD:-secure123}
       FTLCONF_LOCAL_IPV4: ${SERVER_IP}
       PIHOLE_DNS_: '1.1.1.1;1.0.0.1'
-      VIRTUAL_HOST: pihole.local
+      VIRTUAL_HOST: ${HOSTNAME:-otsi}.${LOCAL_DOMAIN:-local}
     volumes:
       - './pihole/data:/etc/pihole'
       - './pihole/dnsmasq:/etc/dnsmasq.d'

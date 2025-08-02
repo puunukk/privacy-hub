@@ -104,19 +104,27 @@ git clone https://github.com/your-username/privacy-hub.git
 cd privacy-hub
 
 # Make scripts executable
-chmod +x scripts/setup.sh scripts/manage.sh
+chmod +x scripts/*.sh
 ```
 
-### 3.2 Run Automated Setup
+### 3.2 Configure and Deploy
 ```bash
-# Run the setup script (this will auto-detect IP)
+# Step 1: Interactive configuration (creates .env file)
+./scripts/configure.sh
+
+# Step 2: Deploy containers
 ./scripts/setup.sh
 ```
+
+The configuration script will:
+- ✅ Auto-detect Pi's IP address
+- ✅ Prompt for hostname and settings
+- ✅ Generate secure passwords
+- ✅ Create .env configuration file
 
 The setup script will:
 - ✅ Create necessary directories
 - ✅ Generate secure SearXNG secret key
-- ✅ Auto-detect Pi's IP address
 - ✅ Build all Docker containers
 - ✅ Start all services
 - ✅ Generate SSL certificates

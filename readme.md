@@ -60,7 +60,7 @@ External Network → Pi (ONLY 53, 80, 443)
 ```bash
 # Flash Raspberry Pi OS Lite (64-bit)
 # In Pi Imager advanced settings:
-# ✅ Set hostname: otsi
+# ✅ Set hostname: otsi (or your preference)
 # ✅ Enable SSH
 # ✅ Set username: pi
 ```
@@ -69,7 +69,8 @@ External Network → Pi (ONLY 53, 80, 443)
 ```bash
 ssh pi@otsi.local
 
-# Install Docker
+# Update system and install Docker
+sudo apt update && sudo apt upgrade -y
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker pi
 sudo reboot
@@ -80,17 +81,25 @@ sudo reboot
 git clone https://github.com/your-username/privacy-hub.git
 cd privacy-hub
 chmod +x scripts/*.sh
+
+# Step 1: Configure your setup
+./scripts/configure.sh
+
+# Step 2: Deploy the services
 ./scripts/setup.sh
 ```
 
-### 4. **Configure Router**
-- **Router DNS**: Set to Pi's IP address  
-- **Fixed IP**: Reserve Pi's MAC address for static IP (enables hostname access)
+### 4. **Configure Router DNS**
+- **Router DNS**: Set to your Pi's IP address  
+- **DHCP Reservation**: Reserve Pi's MAC for static IP (enables hostname access)
 
-### 5. **Access Services**
-- 🔍 **Search Homepage**: `https://otsi.local` or `https://your-pi-ip`
-- 🛡️ **Pi-hole Admin**: `https://otsi.local/admin` or `https://your-pi-ip/admin`
-- ❤️ **Health Check**: `https://otsi.local/health` or `https://your-pi-ip/health`
+### 5. **Access Your Services**
+After setup, access using either hostname or IP:
+- 🔍 **Private Search**: `https://otsi.local` or `https://192.168.1.100`
+- 🛡️ **Pi-hole Admin**: `https://otsi.local/admin` or `https://192.168.1.100/admin`
+- ❤️ **Health Check**: `https://otsi.local/health` or `https://192.168.1.100/health`
+
+> **Default Pi-hole password**: `secure123` (change during configuration!)
 
 ## 📱 **User Experience**
 
@@ -129,30 +138,35 @@ chmod +x scripts/*.sh
 ```
 privacy-hub/
 ├── docker-compose.yml          # Service orchestration
+├── env.example                 # Environment configuration template
+├── .gitignore                  # Git ignore rules
 ├── nginx/                      # Reverse proxy & SSL
 ├── pihole/                     # DNS ad-blocking
 ├── searxng/                    # Private search engine
-├── scripts/                    # Management tools
-└── RASPBERRY_PI_SETUP.md       # Detailed setup guide
+├── scripts/
+│   ├── configure.sh            # Interactive configuration setup
+│   ├── setup.sh                # Container deployment
+│   └── manage.sh               # Service management
+├── RASPBERRY_PI_SETUP.md       # Detailed setup guide
+└── Docs/                       # Extended documentation
 ```
 
 ## 🛠️ **Management Commands**
 
 ```bash
-# Check status
-./scripts/manage.sh status
+# Configuration
+./scripts/configure.sh          # Interactive setup (first time)
+cp env.example .env             # Manual configuration
 
-# View logs
-./scripts/manage.sh logs
+# Deployment
+./scripts/setup.sh              # Deploy containers
 
-# Restart services
-./scripts/manage.sh restart
-
-# Update containers
-./scripts/manage.sh update
-
-# Create backup
-./scripts/manage.sh backup
+# Daily management
+./scripts/manage.sh status      # Check service status
+./scripts/manage.sh logs        # View service logs  
+./scripts/manage.sh restart     # Restart all services
+./scripts/manage.sh update      # Update containers
+./scripts/manage.sh backup      # Create configuration backup
 ```
 
 ## 📋 **Requirements**

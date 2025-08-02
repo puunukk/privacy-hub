@@ -1,50 +1,59 @@
 #!/bin/bash
-# Setup script - no hardcoded IPs needed!
+# Setup script - deploys Privacy Hub containers
 
-echo "Setting up Privacy Hub..."
+set -e
+
+echo "🚀 Setting up Privacy Hub..."
+
+# Check if .env exists
+if [ ! -f ".env" ]; then
+    echo "❌ Configuration not found!"
+    echo "   Run: ./scripts/configure.sh first"
+    exit 1
+fi
+
+# Load environment variables
+source .env
+
+echo "📍 Using server IP: $SERVER_IP"
+echo "🏷️  Using hostname: $HOSTNAME.$LOCAL_DOMAIN"
 
 # Create directories
+echo "📁 Creating directories..."
 mkdir -p pihole/{data,dnsmasq}
 mkdir -p searxng/data
 mkdir -p nginx/ssl
 
-# Generate SSL certificates for nginx (since volume mount overrides container certs)
-echo "Generating SSL certificates..."
+# Generate SSL certificates for nginx
+echo "🔒 Setting up SSL certificates..."
 if [ ! -f "nginx/ssl/nginx.crt" ]; then
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
         -keyout nginx/ssl/nginx.key \
         -out nginx/ssl/nginx.crt \
-        -subj "/C=FI/ST=State/L=City/O=Home/CN=*.local" \
+        -subj "/C=FI/ST=State/L=City/O=Home/CN=*.$LOCAL_DOMAIN" \
         >/dev/null 2>&1
     echo "✅ SSL certificates generated"
 else
     echo "✅ SSL certificates already exist"
 fi
 
-# Generate random secret for SearXNG and create settings in data directory
+# Generate random secret for SearXNG
+echo "🔐 Configuring SearXNG..."
 RANDOM_SECRET=$(openssl rand -hex 32)
 
-# Create settings.yml in the data directory (which gets mounted to container)
+# Create settings.yml in the data directory
 cp searxng/settings.yml searxng/data/settings.yml
 sed -i "s/CHANGE_ME_TO_RANDOM_50_CHARS/$RANDOM_SECRET/" searxng/data/settings.yml
 
-# Set proper permissions for all data directories
-echo "Setting up permissions..."
-
-# SearXNG container runs as UID 977 (searxng user)
+# Set proper permissions
+echo "🔧 Setting permissions..."
 if command -v sudo >/dev/null 2>&1; then
     sudo chown -R 977:977 searxng/data/
-    # Ensure other directories are accessible
     sudo chown -R $USER:$USER pihole/ nginx/ || true
 else
     chown -R 977:977 searxng/data/
     chown -R $USER:$USER pihole/ nginx/ || true
 fi
-
-# Detect local IP automatically
-LOCAL_IP=$(hostname -I | cut -d' ' -f1)
-echo "SERVER_IP=$LOCAL_IP" > .env
-echo "Detected IP: $LOCAL_IP"
 
 # Build and start services
 echo "Building containers..."
@@ -68,14 +77,18 @@ docker compose logs --tail=20
 echo ""
 echo "🎉 Privacy Hub is ready!"
 echo ""
-echo "🔍 Search (Homepage): https://otsi.local (or https://$LOCAL_IP)"
-echo "🛡️ Pi-hole Admin: https://otsi.local/admin"
-echo "❤️ Health Check: https://otsi.local/health"
+echo "🔍 Search (Homepage): https://$HOSTNAME.$LOCAL_DOMAIN (or https://$SERVER_IP)"
+echo "🛡️ Pi-hole Admin: https://$HOSTNAME.$LOCAL_DOMAIN/admin (or https://$SERVER_IP/admin)"
+echo "❤️ Health Check: https://$HOSTNAME.$LOCAL_DOMAIN/health (or https://$SERVER_IP/health)"
+echo "🔑 Pi-hole Password: $PIHOLE_PASSWORD"
 echo ""
 echo "⚠️  SSL Warning: Accept the self-signed certificate in your browser"
 echo ""
 echo "📝 Configure your router:"
-echo "   1. Set DHCP reservation for this Pi's MAC to: $LOCAL_IP"
-echo "   2. Set router DNS to: $LOCAL_IP"
+echo "   1. Set DHCP reservation for this Pi's MAC to: $SERVER_IP"
+echo "   2. Set router DNS to: $SERVER_IP"
 echo ""
-echo "🔧 Management: ./scripts/manage.sh restart searxng" 
+echo "🔧 Management:"
+echo "   ./scripts/manage.sh status     # Check status"
+echo "   ./scripts/manage.sh logs       # View logs" 
+echo "   ./scripts/manage.sh restart    # Restart services" 
