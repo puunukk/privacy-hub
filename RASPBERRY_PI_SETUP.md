@@ -173,7 +173,7 @@ After setup completes, you'll see:
 🎉 Privacy Hub is ready!
 
 🔍 Search (Homepage): https://otsi.local (or https://192.168.1.100)
-🛡️ Pi-hole Admin: https://otsi.local/pihole/admin (or https://192.168.1.100/pihole/admin)
+🛡️ Pi-hole Admin: https://otsi.local/admin (or https://192.168.1.100/admin)
 ❤️ Health Check: https://otsi.local/health (or https://192.168.1.100/health)
 ```
 
@@ -356,7 +356,7 @@ sudo apt update && sudo apt upgrade -y
    - No tracking, private search
    - Ad-free browsing automatically
 
-🛡️ **Network Admin**: https://otsi.local/pihole/admin (hosts only)
+🛡️ **Network Admin**: https://otsi.local/admin (hosts only)
 
 ⚠️ **SSL Warning**: Click "Advanced" → "Proceed" (safe, local certificate)
 ```
@@ -369,7 +369,7 @@ sudo apt update && sudo apt upgrade -y
    - No tracking, private search  
    - Ad-free browsing automatically
 
-🛡️ **Network Admin**: https://192.168.1.100/pihole/admin (hosts only)
+🛡️ **Network Admin**: https://192.168.1.100/admin (hosts only)
 
 ⚠️ **SSL Warning**: Click "Advanced" → "Proceed" (safe, local certificate)
 ```
