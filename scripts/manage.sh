@@ -10,7 +10,7 @@ NC='\033[0m' # No Color
 # Function to show status
 show_status() {
     echo -e "${GREEN}Privacy Hub Status:${NC}"
-    docker-compose ps
+    docker compose ps
     echo ""
     
     # Show local IP
@@ -29,10 +29,10 @@ show_status() {
 restart_service() {
     if [ -z "$1" ]; then
         echo -e "${YELLOW}Restarting all services...${NC}"
-        docker-compose restart
+        docker compose restart
     else
         echo -e "${YELLOW}Restarting $1...${NC}"
-        docker-compose restart $1
+        docker compose restart $1
     fi
 }
 
@@ -40,18 +40,18 @@ restart_service() {
 view_logs() {
     if [ -z "$1" ]; then
         echo -e "${YELLOW}Showing all logs...${NC}"
-        docker-compose logs -f
+        docker compose logs -f
     else
         echo -e "${YELLOW}Showing logs for $1...${NC}"
-        docker-compose logs -f $1
+        docker compose logs -f $1
     fi
 }
 
 # Function to update containers
 update_containers() {
     echo -e "${YELLOW}Updating containers...${NC}"
-    docker-compose pull
-    docker-compose up -d --build
+    docker compose pull
+    docker compose up -d --build
     echo -e "${GREEN}Update complete!${NC}"
 }
 
@@ -87,11 +87,11 @@ case "$1" in
         ;;
     "stop")
         echo -e "${YELLOW}Stopping all services...${NC}"
-        docker-compose down
+        docker compose down
         ;;
     "start")
         echo -e "${YELLOW}Starting all services...${NC}"
-        docker-compose up -d
+        docker compose up -d
         ;;
     *)
         echo -e "${RED}Usage: $0 {status|restart [service]|logs [service]|update|backup|start|stop}${NC}"

@@ -19,10 +19,10 @@ echo "Detected IP: $LOCAL_IP"
 
 # Build and start services
 echo "Building containers..."
-docker-compose build
+docker compose build
 
 echo "Starting services..."
-docker-compose up -d
+docker compose up -d
 
 # Wait for services to start
 echo "Waiting for services to start..."

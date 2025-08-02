@@ -69,15 +69,25 @@ sudo apt install -y git curl vim htop
 ## 🐳 **Step 2: Install Docker**
 
 ```bash
-# Install Docker
+# Install Docker (includes Docker Compose V2)
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 
 # Add pi user to docker group
 sudo usermod -aG docker pi
 
-# Install Docker Compose
-sudo pip3 install docker-compose
+# Verify Docker Compose is installed (should come with Docker)
+docker compose version
+
+# If Docker Compose is not available, install it manually
+if ! docker compose version > /dev/null 2>&1; then
+    echo "Installing Docker Compose manually..."
+    sudo apt update
+    sudo apt install -y docker-compose-plugin
+fi
+
+# Clean up
+rm get-docker.sh
 
 # Reboot to apply group changes
 sudo reboot
