@@ -106,6 +106,7 @@ case "$1" in
         echo "  $0 ssl             # Upgrade to trusted SSL certificates"
         echo "  $0 password        # Reset/manage Pi-hole admin password"
         echo "  $0 diagnose        # Run diagnostic checks"
+        echo "  $0 network         # Fix network connectivity issues"
         exit 1
         ;;
     "ssl")
@@ -119,5 +120,9 @@ case "$1" in
     "diagnose"|"diag")
         echo -e "${YELLOW}Running diagnostics...${NC}"
         ./scripts/diagnose.sh
+        ;;
+    "network"|"net")
+        echo -e "${YELLOW}Fixing network connectivity...${NC}"
+        ./scripts/fix-network.sh
         ;;
 esac 

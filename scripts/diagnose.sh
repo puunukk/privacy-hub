@@ -37,6 +37,18 @@ echo ""
 echo "🌐 Network Tests:"
 echo "Testing internal connectivity..."
 
+# Check Docker networks
+echo "📋 Docker Networks:"
+docker network ls | grep privacy-hub
+
+echo ""
+echo "📋 Container Network Assignments:"
+docker inspect privacy-hub-nginx | jq -r '.[] | .NetworkSettings.Networks | keys[]' 2>/dev/null || echo "nginx: network info unavailable"
+docker inspect privacy-hub-pihole | jq -r '.[] | .NetworkSettings.Networks | keys[]' 2>/dev/null || echo "pihole: network info unavailable"  
+docker inspect privacy-hub-searxng | jq -r '.[] | .NetworkSettings.Networks | keys[]' 2>/dev/null || echo "searxng: network info unavailable"
+
+echo ""
+echo "🔍 Hostname Resolution Tests:"
 # Test if nginx can reach pihole
 if docker compose ps | grep -q "nginx.*Up"; then
     echo "✅ NGINX container is running"
@@ -44,6 +56,8 @@ if docker compose ps | grep -q "nginx.*Up"; then
         echo "✅ NGINX can resolve pihole hostname"
     else
         echo "❌ NGINX cannot resolve pihole hostname"
+        echo "   Trying IP resolution..."
+        docker exec nginx getent hosts pihole || echo "   No pihole host entry found"
     fi
 else
     echo "❌ NGINX container not running"
@@ -56,9 +70,30 @@ if docker compose ps | grep -q "searxng.*Up"; then
         echo "✅ NGINX can resolve searxng hostname"
     else
         echo "❌ NGINX cannot resolve searxng hostname"
+        echo "   Trying IP resolution..."
+        docker exec nginx getent hosts searxng || echo "   No searxng host entry found"
     fi
 else
     echo "❌ SearXNG container not running"
+fi
+
+echo ""
+echo "🔍 Direct Connectivity Tests:"
+if docker compose ps | grep -q "nginx.*Up" && docker compose ps | grep -q "pihole.*Up"; then
+    echo "Testing direct HTTP connectivity..."
+    if docker exec nginx wget -q --spider http://pihole:80 2>/dev/null; then
+        echo "✅ NGINX can reach Pi-hole HTTP interface"
+    else
+        echo "❌ NGINX cannot reach Pi-hole HTTP interface"
+    fi
+fi
+
+if docker compose ps | grep -q "nginx.*Up" && docker compose ps | grep -q "searxng.*Up"; then
+    if docker exec nginx wget -q --spider http://searxng:8080 2>/dev/null; then
+        echo "✅ NGINX can reach SearXNG interface"
+    else
+        echo "❌ NGINX cannot reach SearXNG interface"
+    fi
 fi
 
 echo ""
