@@ -1,0 +1,169 @@
+#!/bin/bash
+# Privacy Hub Setup Script
+# Automated deployment of all services
+
+set -e
+
+# Source utilities
+source scripts/utils/colors.sh
+source scripts/core/env.sh
+source scripts/core/docker.sh
+source scripts/core/ssl.sh
+source scripts/services/pihole.sh
+
+main() {
+    print_header "Privacy Hub Deployment"
+    
+    # Check if configured
+    if [ ! -f ".env" ]; then
+        print_error "No configuration found. Please run ./configure first."
+        exit 1
+    fi
+    
+    # Load and validate environment
+    print_step "Loading configuration..."
+    if ! load_env; then
+        print_error "Failed to load environment configuration"
+        exit 1
+    fi
+    
+    if ! validate_env; then
+        print_error "Environment validation failed"
+        exit 1
+    fi
+    
+    print_success "Configuration loaded and validated"
+    
+    # Show deployment summary
+    echo ""
+    print_header "Deployment Summary"
+    echo ""
+    echo -e "${BLUE}🌐 Network Configuration:${NC}"
+    echo "   Server IP: ${GREEN}$SERVER_IP${NC}"
+    echo "   Hostname: ${GREEN}$HOSTNAME.$LOCAL_DOMAIN${NC}"
+    echo "   Timezone: ${GREEN}$TZ${NC}"
+    echo ""
+    echo -e "${BLUE}🔍 SearXNG Configuration:${NC}"
+    echo "   Theme: ${GREEN}$SEARXNG_DEFAULT_THEME${NC}"
+    echo "   Safe Search: ${GREEN}$SEARXNG_SAFE_SEARCH${NC}"
+    echo "   Language: ${GREEN}$SEARXNG_DEFAULT_LANG${NC}"
+    echo ""
+    
+    if ! confirm "Continue with deployment?" "y"; then
+        print_info "Deployment cancelled by user"
+        exit 0
+    fi
+    
+    # Generate SSL certificates
+    print_step "Generating SSL certificates..."
+    if generate_self_signed_cert "nginx/ssl" "$HOSTNAME.$LOCAL_DOMAIN" "$SERVER_IP"; then
+        print_success "SSL certificates generated"
+    else
+        print_error "Failed to generate SSL certificates"
+        exit 1
+    fi
+    
+    # Start services
+    print_step "Starting Privacy Hub services..."
+    if start_services; then
+        print_success "Services started successfully"
+    else
+        print_error "Failed to start services"
+        exit 1
+    fi
+    
+    # Wait for services to be ready
+    print_step "Waiting for services to initialize..."
+    sleep 15
+    
+    # Configure Pi-hole password (CRITICAL FIX)
+    print_step "Configuring Pi-hole admin password..."
+    if set_pihole_password "$PIHOLE_PASSWORD"; then
+        print_success "Pi-hole password configured successfully"
+    else
+        print_warning "Failed to set Pi-hole password - you may need to set it manually"
+    fi
+    
+    # Test deployment
+    print_step "Testing deployment..."
+    local tests_passed=0
+    local total_tests=3
+    
+    # Test service status
+    if check_services_status; then
+        ((tests_passed++))
+    fi
+    
+    # Test web interfaces
+    if load_env && curl -k -s --max-time 10 "https://$SERVER_IP/health" > /dev/null; then
+        print_success "Web interfaces are accessible"
+        ((tests_passed++))
+    else
+        print_error "Web interfaces are not accessible"
+    fi
+    
+    # Test Pi-hole API
+    if curl -k -s --max-time 10 "https://$SERVER_IP/api/version" | grep -q "version"; then
+        print_success "Pi-hole API is responding"
+        ((tests_passed++))
+    else
+        print_error "Pi-hole API is not responding"
+    fi
+    
+    # Show final status
+    echo ""
+    if [ $tests_passed -eq $total_tests ]; then
+        print_header "🎉 Privacy Hub Deployment Successful!"
+        
+        echo ""
+        echo -e "${GREEN}${EMOJI_SUCCESS} All services are running and accessible!${NC}"
+        echo ""
+        echo -e "${BLUE}🌐 Access Your Privacy Hub:${NC}"
+        echo ""
+        echo -e "   🔍 ${BOLD}Private Search:${NC}    ${GREEN}https://$SERVER_IP/${NC}"
+        echo -e "   🛡️  ${BOLD}Pi-hole Admin:${NC}     ${GREEN}https://$SERVER_IP/admin${NC}"
+        echo -e "   ❤️  ${BOLD}Health Check:${NC}      ${GREEN}https://$SERVER_IP/health${NC}"
+        echo ""
+        echo -e "   🌐 ${BOLD}Hostname Access:${NC}    ${GREEN}https://$HOSTNAME.$LOCAL_DOMAIN${NC}"
+        echo ""
+        echo -e "${BLUE}🔑 Authentication:${NC}"
+        echo -e "   Pi-hole Password: ${GREEN}$PIHOLE_PASSWORD${NC}"
+        echo ""
+        echo -e "${BLUE}⚠️  Important:${NC}"
+        echo "   • Accept the self-signed SSL certificate in your browser"
+        echo "   • Configure your router DNS to use ${GREEN}$SERVER_IP${NC}"
+        echo "   • Or run ${GREEN}./manage${NC} for SSL certificate upgrade"
+        echo ""
+        echo -e "${BLUE}📝 Router Configuration:${NC}"
+        echo "   1. Set DHCP reservation for this Pi's MAC to: ${GREEN}$SERVER_IP${NC}"
+        echo "   2. Set router DNS server to: ${GREEN}$SERVER_IP${NC}"
+        echo "   3. All devices will then use privacy-protected DNS"
+        echo ""
+        echo -e "${BLUE}🔧 Management Commands:${NC}"
+        echo "   ${GREEN}./manage${NC}           Interactive management menu"
+        echo "   ${GREEN}./manage status${NC}    Check service status"
+        echo "   ${GREEN}./manage ssl${NC}       Upgrade SSL certificates"
+        
+    else
+        print_header "⚠️  Privacy Hub Deployment Completed with Issues"
+        
+        echo ""
+        print_warning "Deployment completed but some tests failed ($tests_passed/$total_tests passed)"
+        echo ""
+        echo -e "${BLUE}🔧 Troubleshooting:${NC}"
+        echo "   Run ${GREEN}./manage diagnose${NC} for detailed diagnostics"
+        echo "   Run ${GREEN}./manage logs${NC} to check service logs"
+        echo "   Run ${GREEN}./manage restart${NC} to restart all services"
+        echo ""
+        echo -e "${BLUE}🌐 Try accessing:${NC}"
+        echo "   ${GREEN}https://$SERVER_IP/health${NC} (should return 'OK')"
+        echo "   ${GREEN}https://$SERVER_IP/admin${NC} (Pi-hole admin)"
+        echo "   ${GREEN}https://$SERVER_IP/${NC} (SearXNG search)"
+    fi
+    
+    echo ""
+    print_info "Deployment log saved. Use ${GREEN}./manage${NC} for ongoing management."
+}
+
+# Run main function
+main "$@"

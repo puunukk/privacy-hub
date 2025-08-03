@@ -1,6 +1,6 @@
-# 🏠 Privacy Hub - Self-Hosted Network Privacy Solution
+# 🛡️ Privacy Hub - Local Network Privacy Gateway
 
-**Transform your Raspberry Pi into a powerful privacy-focused network gateway that provides ad-blocking and private search for your entire home or Airbnb network.**
+**Transform your Raspberry Pi into a powerful privacy-focused network gateway providing ad-blocking and private search for your entire home network.**
 
 ![Privacy Hub Architecture](https://img.shields.io/badge/Architecture-Secure%20Reverse%20Proxy-green)
 ![Pi-hole](https://img.shields.io/badge/Pi--hole-DNS%20Ad%20Blocking-blue)
@@ -9,237 +9,239 @@
 
 ## 🎯 **What is Privacy Hub?**
 
-Privacy Hub is a **complete network privacy solution** that runs on a Raspberry Pi, providing:
+Privacy Hub is a **complete local network privacy solution** that runs on a Raspberry Pi 4, providing:
 
-- 🛡️ **Network-wide ad blocking** via Pi-hole DNS filtering
-- 🔍 **Private search engine** via SearXNG (Google-like but no tracking)
-- 🔒 **Secure HTTPS access** with automatic SSL certificates
-- 🏗️ **Professional architecture** using NGINX reverse proxy
-- 📱 **Zero device configuration** - works automatically for all connected devices
+- 🛡️ **Network-wide ad blocking** - Block ads, trackers, and malware for all devices
+- 🔍 **Private search engine** - Google-like search without tracking via SearXNG  
+- 🔒 **Secure HTTPS access** - Automatic local SSL certificates
+- 🏗️ **Professional architecture** - NGINX reverse proxy with container isolation
+- 📱 **Zero device configuration** - Works automatically for all connected devices
+- 🌐 **Local network focus** - Designed for home/office networks
 
-Perfect for **home networks**, **Airbnb properties**, or anywhere you want **privacy-by-default**.
+Perfect for **home networks** or anywhere you want **privacy-by-default**.
 
-## ✨ **Key Features**
-
-### 🔐 **Security First**
-- **Single entry point** - Only NGINX exposed to network
-- **Internal service isolation** - Pi-hole & SearXNG not directly accessible
-- **HTTPS everywhere** - Self-signed certificates for local encryption
-- **Minimal attack surface** - Enterprise-grade reverse proxy setup
-
-### 🚀 **Easy Deployment**
-- **One-command setup** - Automated installation script
-- **No hardcoded IPs** - Automatic network detection
-- **Hostname-based access** - Use `https://otsi.local` instead of IP addresses
-- **Router integration** - Simple DNS configuration
-
-### 🛠️ **Built for Reliability**
-- **SD card optimized** - Minimal logging to preserve storage
-- **Container-based** - Easy updates and rollbacks
-- **Health monitoring** - Built-in status endpoints
-- **Backup system** - Configuration backup tools
-
-## 🌊 **Network Flow**
+## 🏗️ **Architecture Overview**
 
 ```
-Local Network → Pi (ONLY 53, 80, 443)
-                    ↓
-                  NGINX reverse proxy
-                    ↓
-  ┌─────────────────────────────────┐
-  │ Internal Docker Network         │
-  │                                 │
-  │ pihole:53,80  ←→  searxng:8080  │
-  │ (not exposed)     (not exposed) │
-  └─────────────────────────────────┘
+Your Devices → Router → Raspberry Pi 4 (Privacy Hub) → Internet
+                           ↓
+                    NGINX (Ports 53, 80, 443)
+                           ↓
+              ┌─────────────────────────────────┐
+              │     Internal Docker Network     │
+              │                                 │
+              │  Pi-hole:80    SearXNG:8080    │
+              │  (DNS + Admin)  (Search)        │
+              └─────────────────────────────────┘
 ```
 
-## 🚀 **Quick Start**
+### **Network Flow:**
+1. **DNS Queries** → Pi-hole (blocks ads/trackers)
+2. **Web Traffic** → NGINX → Pi-hole admin or SearXNG search
+3. **All Services** → Isolated containers, only NGINX exposed
 
-### 1. **Prepare Raspberry Pi**
+## 🚀 **Quick Start (Raspberry Pi 4)**
+
+### **Prerequisites:**
+- Raspberry Pi 4 (2GB+ RAM recommended)
+- Raspbian OS or Ubuntu Server
+- Docker & Docker Compose installed
+- Static IP on your local network
+
+### **Installation:**
 ```bash
-# Flash Raspberry Pi OS Lite (64-bit)
-# In Pi Imager advanced settings:
-# ✅ Set hostname: otsi (or your preference)
-# ✅ Enable SSH
-# ✅ Set username: pi
-```
-
-### 2. **Install Dependencies**
-
-**On your computer (for SSL without warnings):**
-```bash
-# Windows (PowerShell as Admin):
-choco install mkcert
-mkcert -install
-
-# macOS:
-brew install mkcert
-mkcert -install
-
-# Linux:
-# Download from https://github.com/FiloSottile/mkcert/releases
-mkcert -install
-```
-
-**On your Raspberry Pi:**
-```bash
-ssh pi@otsi.local
-
-# Update system and install Docker
-sudo apt update && sudo apt upgrade -y
-curl -fsSL https://get.docker.com | sh
-sudo usermod -aG docker pi
-
-# Install mkcert for trusted SSL certificates
-curl -JLO "https://dl.filippo.io/mkcert/latest?for=linux/arm64"
-chmod +x mkcert-v*-linux-arm64
-sudo mv mkcert-v*-linux-arm64 /usr/local/bin/mkcert
-mkcert -install
-
-sudo reboot
-```
-
-### 3. **Deploy Privacy Hub**
-```bash
+# Clone the repository
 git clone https://github.com/your-username/privacy-hub.git
 cd privacy-hub
-chmod +x scripts/*.sh
 
-# Step 1: Configure your setup
-./scripts/configure.sh
+# Configure environment (interactive setup)
+./configure
 
-# Step 2: Deploy the services
-./scripts/setup.sh
+# Deploy privacy hub  
+./setup
 ```
 
-### 4. **Configure Router DNS**
-- **Router DNS**: Set to your Pi's IP address  
-- **DHCP Reservation**: Reserve Pi's MAC for static IP (enables hostname access)
-
-### 5. **Access Your Services**
-After setup, access using either hostname or IP:
-- 🔍 **Private Search**: `https://otsi.local` or `https://192.168.1.100`
-- 🛡️ **Pi-hole Admin**: `https://otsi.local/admin` or `https://192.168.1.100/admin`
-- ❤️ **Health Check**: `https://otsi.local/health` or `https://192.168.1.100/health`
-
-> **Default Pi-hole password**: `secure123` (change during configuration!)
-
-## 📱 **User Experience**
-
-### For Family/Home Network
-- **Automatic ad blocking** on all devices (phones, tablets, smart TVs)
-- **Private search** as default homepage
-- **No app installations** required
-- **Works with everything** that connects to WiFi
-
-### For Airbnb Hosts
-- **Professional impression** with custom search portal
-- **Reduced bandwidth usage** from blocked ads
-- **Privacy-focused amenity** for tech-savvy guests
-- **Set-and-forget** operation
-
-### Example Guest Instructions
-```markdown
-📱 WiFi: YourNetwork / password123
-
-🔍 Private Search: https://otsi.local (or https://192.168.1.100)
-   → No tracking, no ads, fast results
-
-🛡️ Network Admin: https://otsi.local/admin (hosts only)
-
-⚠️ Security Notice: Click "Accept" on SSL warning (safe, local certificate)
-```
-
-## 🏗️ **Architecture Benefits**
-
-✅ **Enterprise-grade security** - Same setup used by major companies  
-✅ **Zero configuration** - Works on any network automatically  
-✅ **Scalable design** - Easy to add more services later  
-✅ **Privacy by default** - No data collection, all local processing  
-✅ **Low maintenance** - Automated updates and monitoring  
-
-## 📁 **Project Structure**
-
-```
-privacy-hub/
-├── docker-compose.yml          # Service orchestration
-├── env.example                 # Environment configuration template
-├── .gitignore                  # Git ignore rules
-├── nginx/                      # Reverse proxy & SSL
-├── pihole/                     # DNS ad-blocking
-├── searxng/                    # Private search engine
-├── scripts/
-│   ├── configure.sh            # Interactive configuration setup
-│   ├── setup.sh                # Container deployment
-│   └── manage.sh               # Service management
-├── RASPBERRY_PI_SETUP.md       # Detailed setup guide
-└── Docs/                       # Extended documentation
-```
+### **Router Configuration:**
+1. Set **DHCP reservation** for your Pi's MAC address
+2. Set **router DNS** to your Pi's IP address  
+3. All devices will now use privacy-protected DNS
 
 ## 🛠️ **Management Commands**
 
+Privacy Hub includes comprehensive management tools:
+
+### **Interactive Management:**
 ```bash
-# Configuration
-./scripts/configure.sh          # Interactive setup (first time)
-cp env.example .env             # Manual configuration
-
-# Deployment
-./scripts/setup.sh              # Deploy containers
-
-# Daily management
-./scripts/manage.sh status      # Check service status
-./scripts/manage.sh logs        # View service logs  
-./scripts/manage.sh restart     # Restart all services
-./scripts/manage.sh update      # Update containers
-./scripts/manage.sh backup      # Create configuration backup
+./manage                       # Full interactive menu system
 ```
 
-## 📋 **Requirements**
+### **Quick Commands:**
+```bash
+./manage status               # Check all services  
+./manage restart              # Restart all services
+./manage password             # Reset Pi-hole password
+./manage ssl                  # Upgrade SSL certificates
+./manage diagnose             # Run network diagnostics
+./manage info                 # Show access URLs & passwords
+```
 
-### Hardware
-- **Raspberry Pi 4** (recommended) or Pi 3B+
-- **32GB+ MicroSD Card** (Class 10+)
-- **Network connection**
-- **Router admin access**
+### **Professional Features:**
+- 🎯 **Interactive Menus**: Navigate complex operations with ease
+- 📊 **Real-time Monitoring**: Service health and resource usage
+- 🔧 **Advanced Diagnostics**: Network connectivity and SSL testing  
+- 💾 **Backup & Restore**: Data protection and migration tools
+- 🔒 **Security Management**: Password resets and certificate upgrades
 
-### Software
-- **Raspberry Pi OS Lite** (64-bit)
-- **Docker & Docker Compose**
-- **Basic terminal knowledge**
+## 🌐 **Access Your Services**
 
-## 🎯 **Perfect For**
+After installation, access your privacy hub:
 
-- 🏠 **Home networks** wanting privacy and ad-blocking
-- 🏨 **Airbnb properties** offering premium internet experience  
-- 👨‍💻 **Tech enthusiasts** learning network security
-- 👨‍👩‍👧‍👦 **Families** protecting children from ads and tracking
-- 🎓 **Educational purposes** understanding privacy technology
+- **🔍 Private Search**: `https://your-pi-ip/` or `https://hostname.local/`
+- **🛡️ Pi-hole Admin**: `https://your-pi-ip/admin`  
+- **❤️ Health Check**: `https://your-pi-ip/health`
 
-## 📚 **Documentation**
+**Default password**: Auto-generated and displayed during setup
 
-- **[Complete Setup Guide](RASPBERRY_PI_SETUP.md)** - Step-by-step instructions
-- **[Pi-hole Documentation](https://docs.pi-hole.net/)** - DNS filtering details
-- **[SearXNG Documentation](https://docs.searxng.org/)** - Search engine configuration
+## 🔧 **Key Features**
+
+### **🔐 Security First**
+- **Single entry point** - Only NGINX exposed to network
+- **Container isolation** - Pi-hole & SearXNG not directly accessible  
+- **HTTPS everywhere** - Local SSL certificates for encrypted access
+- **Minimal attack surface** - Enterprise reverse proxy architecture
+
+### **🚀 Easy Management**
+- **One-command deployment** - Automated installation
+- **Auto-configuration** - Detects network settings automatically
+- **Secure passwords** - Auto-generated strong passwords
+- **Health monitoring** - Built-in diagnostics and status checks
+
+### **🛠️ Raspberry Pi Optimized**
+- **SD card protection** - Minimal logging and RAM-based temporary files
+- **Resource efficient** - Optimized for Pi 4 hardware
+- **Container-based** - Easy updates and rollbacks
+- **Network performance** - DNS caching and optimized routing
+
+## 📊 **Performance & Benefits**
+
+### **Network-wide Protection:**
+- ✅ **Ad blocking**: 90%+ reduction in ads across all devices
+- ✅ **Tracker blocking**: Prevent behavioral profiling and data collection
+- ✅ **Malware protection**: Block known malicious domains
+- ✅ **Faster browsing**: Reduced bandwidth usage and faster page loads
+
+### **Private Search:**
+- ✅ **No tracking**: Search without building user profiles
+- ✅ **Multiple sources**: Aggregates results from Google, Bing, DuckDuckGo
+- ✅ **Local processing**: All search requests processed on your network
+- ✅ **Fast results**: Local caching for improved performance
+
+## 🔧 **Advanced Configuration**
+
+### **Environment Variables:**
+```bash
+# Core settings (auto-generated)
+SERVER_IP=192.168.1.120
+HOSTNAME=privacy-hub
+PIHOLE_PASSWORD=auto-generated
+
+# SearXNG customization  
+SEARXNG_DEFAULT_THEME=simple
+SEARXNG_SAFE_SEARCH=1
+SEARXNG_DEFAULT_LANG=en
+```
+
+### **Custom DNS Blocking:**
+Add custom domains to block in Pi-hole admin interface or via:
+```bash
+docker exec pihole pihole -b example.com
+```
+
+### **SSL Certificate Management:**
+```bash
+# Upgrade to mkcert-generated certificates (no browser warnings)
+./scripts/upgrade-ssl.sh
+
+# Manual certificate generation
+docker exec nginx openssl req -x509 -nodes -days 365 ...
+```
+
+## 🐛 **Troubleshooting**
+
+### **Common Issues:**
+
+**DNS not working:**
+```bash
+./scripts/diagnose.sh           # Check system status
+./scripts/manage.sh network     # Fix network issues
+```
+
+**Pi-hole admin login fails:**
+```bash
+./scripts/manage.sh password    # Reset password
+./scripts/diagnose.sh           # Check authentication
+```
+
+**SSL certificate warnings:**
+```bash
+./scripts/upgrade-ssl.sh        # Install trusted certificates
+```
+
+**Services not starting:**
+```bash
+./scripts/manage.sh logs        # Check error logs
+./scripts/manage.sh restart     # Restart services
+```
+
+## 📂 **Project Structure**
+
+```
+privacy-hub/
+├── README.md                   # This file
+├── docker-compose.yml          # Service orchestration  
+├── .env                        # Environment configuration (auto-generated)
+├── scripts/                    # Management tools
+│   ├── configure.sh           # Environment setup
+│   ├── setup.sh               # Main deployment
+│   ├── manage.sh              # Service management
+│   ├── diagnose.sh            # System diagnostics
+│   └── upgrade-ssl.sh         # SSL certificate management
+├── nginx/                      # Reverse proxy configuration
+│   ├── nginx.conf             # Main proxy configuration
+│   ├── Dockerfile             # Custom nginx build
+│   └── ssl/                   # SSL certificates (auto-generated)
+├── pihole/                     # DNS ad-blocking service
+│   ├── Dockerfile             # Custom Pi-hole build
+│   ├── custom.list            # Local DNS overrides
+│   └── data/                  # Pi-hole configuration storage
+└── searxng/                    # Private search engine
+    ├── Dockerfile             # Custom SearXNG build
+    ├── settings.yml           # Search engine configuration
+    └── data/                  # SearXNG instance data
+```
 
 ## 🤝 **Contributing**
 
-Contributions welcome! Please read our contributing guidelines and submit pull requests for any improvements.
+This project is designed to be easily customizable for different use cases:
+
+- **Home networks** - Complete family privacy protection
+- **Small offices** - Professional ad-blocking and search
+- **Developer environments** - Local testing with privacy
+- **Educational use** - Learn about network security and privacy
+
+### **Customization Ideas:**
+- Add additional blocklists for specific regions
+- Integrate with VPN services for external access
+- Add monitoring and alerting capabilities
+- Extend with additional privacy services
 
 ## 📄 **License**
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License - See LICENSE file for details.
 
-## 🙏 **Acknowledgments**
+## 🔗 **Useful Links**
 
-Built with amazing open-source projects:
-- **[Pi-hole](https://pi-hole.net/)** - Network-wide ad blocking
-- **[SearXNG](https://searxng.github.io/searxng/)** - Privacy-respecting search
-- **[NGINX](https://nginx.org/)** - High-performance reverse proxy
-- **[Docker](https://docker.com/)** - Containerization platform
-
----
-
-**⭐ Star this repository if Privacy Hub helps protect your network!**
-
-**🏠 Transform your Raspberry Pi into a privacy powerhouse today!**
+- [Pi-hole Documentation](https://docs.pi-hole.net/)
+- [SearXNG Documentation](https://docs.searxng.org/)
+- [NGINX Documentation](https://nginx.org/en/docs/)
+- [Docker Documentation](https://docs.docker.com/)

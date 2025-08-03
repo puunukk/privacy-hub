@@ -1,0 +1,911 @@
+#!/bin/bash
+# Privacy Hub Management Interface
+# Interactive menu-driven management system
+
+set -e
+
+# Source all utilities
+source scripts/utils/colors.sh
+source scripts/utils/prompts.sh
+source scripts/core/env.sh
+source scripts/core/docker.sh
+source scripts/core/network.sh
+source scripts/core/ssl.sh
+source scripts/services/pihole.sh
+source scripts/services/searxng.sh
+source scripts/services/nginx.sh
+
+# Show main menu
+show_main_menu() {
+    clear
+    print_menu_header "Privacy Hub Management"
+    
+    echo -e "${BLUE}📊 Quick Status:${NC}"
+    if load_env 2>/dev/null; then
+        echo -e "   Server: ${GREEN}$SERVER_IP${NC} | Services: $(check_services_status >/dev/null 2>&1 && echo -e "${GREEN}Running${NC}" || echo -e "${RED}Issues${NC}")"
+    else
+        echo -e "   ${YELLOW}Not configured - run ./configure first${NC}"
+    fi
+    
+    echo ""
+    print_separator
+    echo ""
+    
+    print_menu_item "1" "Service Management" "⚙️"
+    print_menu_item "2" "Status & Monitoring" "📊"
+    print_menu_item "3" "Security & Authentication" "🔐"
+    print_menu_item "4" "Network & Connectivity" "🌐"
+    print_menu_item "5" "Configuration & Settings" "⚙️"
+    print_menu_item "6" "Maintenance & Troubleshooting" "🔧"
+    print_menu_item "7" "Information & Help" "ℹ️"
+    
+    echo ""
+    print_separator
+    print_menu_item "q" "Quit" "🚪"
+    echo ""
+}
+
+# Service Management Menu
+service_management_menu() {
+    while true; do
+        clear
+        print_menu_header "Service Management"
+        
+        print_menu_item "1" "Start All Services" "▶️"
+        print_menu_item "2" "Stop All Services" "⏹️"
+        print_menu_item "3" "Restart All Services" "🔄"
+        print_menu_item "4" "Rebuild All Services" "🔨"
+        print_menu_item "5" "Individual Service Control" "⚙️"
+        print_menu_item "6" "View Service Logs" "📋"
+        
+        echo ""
+        print_separator
+        print_menu_item "b" "Back to Main Menu" "⬅️"
+        echo ""
+        
+        echo -n -e "${BLUE}❓ Select option: ${NC}"
+        read -r choice
+        
+        case "$choice" in
+            1) 
+                clear
+                start_services
+                press_enter
+                ;;
+            2) 
+                clear
+                if confirm "Are you sure you want to stop all services?"; then
+                    stop_services
+                fi
+                press_enter
+                ;;
+            3) 
+                clear
+                restart_services
+                press_enter
+                ;;
+            4) 
+                clear
+                if confirm "This will rebuild all containers. Continue?"; then
+                    rebuild_services
+                fi
+                press_enter
+                ;;
+            5) individual_service_menu ;;
+            6) logs_menu ;;
+            b|B) return ;;
+            *) print_error "Invalid option" && sleep 1 ;;
+        esac
+    done
+}
+
+# Individual Service Menu
+individual_service_menu() {
+    while true; do
+        clear
+        print_menu_header "Individual Service Control"
+        
+        print_menu_item "1" "NGINX (Reverse Proxy)" "🌐"
+        print_menu_item "2" "Pi-hole (DNS & Ad Blocking)" "🛡️"
+        print_menu_item "3" "SearXNG (Private Search)" "🔍"
+        
+        echo ""
+        print_separator
+        print_menu_item "b" "Back" "⬅️"
+        echo ""
+        
+        echo -n -e "${BLUE}❓ Select service: ${NC}"
+        read -r choice
+        
+        case "$choice" in
+            1) nginx_service_menu ;;
+            2) pihole_service_menu ;;
+            3) searxng_service_menu ;;
+            b|B) return ;;
+            *) print_error "Invalid option" && sleep 1 ;;
+        esac
+    done
+}
+
+# NGINX Service Menu
+nginx_service_menu() {
+    while true; do
+        clear
+        print_menu_header "NGINX Management"
+        
+        print_menu_item "1" "Show Status" "📊"
+        print_menu_item "2" "Test Configuration" "✅"
+        print_menu_item "3" "Reload Configuration" "🔄"
+        print_menu_item "4" "Restart Service" "🔄"
+        print_menu_item "5" "View Logs" "📋"
+        print_menu_item "6" "Test SSL Certificate" "🔒"
+        
+        echo ""
+        print_separator
+        print_menu_item "b" "Back" "⬅️"
+        echo ""
+        
+        echo -n -e "${BLUE}❓ Select option: ${NC}"
+        read -r choice
+        
+        case "$choice" in
+            1) clear; show_nginx_status; press_enter ;;
+            2) clear; test_nginx_config; press_enter ;;
+            3) clear; reload_nginx_config; press_enter ;;
+            4) clear; restart_nginx; press_enter ;;
+            5) clear; show_nginx_logs; press_enter ;;
+            6) clear; test_nginx_ssl; press_enter ;;
+            b|B) return ;;
+            *) print_error "Invalid option" && sleep 1 ;;
+        esac
+    done
+}
+
+# Pi-hole Service Menu
+pihole_service_menu() {
+    while true; do
+        clear
+        print_menu_header "Pi-hole Management"
+        
+        print_menu_item "1" "Show Status" "📊"
+        print_menu_item "2" "Update Blocklists" "🔄"
+        print_menu_item "3" "Block/Unblock Domain" "🚫"
+        print_menu_item "4" "Query Domain" "🔍"
+        print_menu_item "5" "Enable/Disable Pi-hole" "⚡"
+        print_menu_item "6" "View Logs" "📋"
+        print_menu_item "7" "Restart DNS Service" "🔄"
+        
+        echo ""
+        print_separator
+        print_menu_item "b" "Back" "⬅️"
+        echo ""
+        
+        echo -n -e "${BLUE}❓ Select option: ${NC}"
+        read -r choice
+        
+        case "$choice" in
+            1) clear; show_pihole_status; press_enter ;;
+            2) clear; update_blocklists; press_enter ;;
+            3) domain_management_menu ;;
+            4) clear; query_domain; press_enter ;;
+            5) clear; toggle_pihole; press_enter ;;
+            6) clear; show_pihole_logs; press_enter ;;
+            7) clear; restart_pihole_dns; press_enter ;;
+            b|B) return ;;
+            *) print_error "Invalid option" && sleep 1 ;;
+        esac
+    done
+}
+
+# Domain Management Menu
+domain_management_menu() {
+    clear
+    print_menu_header "Domain Management"
+    
+    print_menu_item "1" "Block Domain" "🚫"
+    print_menu_item "2" "Unblock Domain" "✅"
+    
+    echo ""
+    echo -n -e "${BLUE}❓ Select option [1-2]: ${NC}"
+    read -r choice
+    
+    clear
+    case "$choice" in
+        1) block_domain ;;
+        2) unblock_domain ;;
+        *) print_error "Invalid option" ;;
+    esac
+    press_enter
+}
+
+# SearXNG Service Menu
+searxng_service_menu() {
+    while true; do
+        clear
+        print_menu_header "SearXNG Management"
+        
+        print_menu_item "1" "Show Status" "📊"
+        print_menu_item "2" "Update Configuration" "⚙️"
+        print_menu_item "3" "Test Search Function" "🔍"
+        print_menu_item "4" "View Statistics" "📈"
+        print_menu_item "5" "Restart Service" "🔄"
+        print_menu_item "6" "View Logs" "📋"
+        
+        echo ""
+        print_separator
+        print_menu_item "b" "Back" "⬅️"
+        echo ""
+        
+        echo -n -e "${BLUE}❓ Select option: ${NC}"
+        read -r choice
+        
+        case "$choice" in
+            1) clear; show_searxng_status; press_enter ;;
+            2) clear; update_searxng_config; press_enter ;;
+            3) clear; test_searxng_search; press_enter ;;
+            4) clear; show_searxng_stats; press_enter ;;
+            5) clear; restart_searxng; press_enter ;;
+            6) clear; show_searxng_logs; press_enter ;;
+            b|B) return ;;
+            *) print_error "Invalid option" && sleep 1 ;;
+        esac
+    done
+}
+
+# Logs Menu
+logs_menu() {
+    while true; do
+        clear
+        print_menu_header "Service Logs"
+        
+        print_menu_item "1" "All Services" "📋"
+        print_menu_item "2" "NGINX Logs" "🌐"
+        print_menu_item "3" "Pi-hole Logs" "🛡️"
+        print_menu_item "4" "SearXNG Logs" "🔍"
+        print_menu_item "5" "Follow Live Logs" "📡"
+        
+        echo ""
+        print_separator
+        print_menu_item "b" "Back" "⬅️"
+        echo ""
+        
+        echo -n -e "${BLUE}❓ Select option: ${NC}"
+        read -r choice
+        
+        case "$choice" in
+            1) clear; show_logs; press_enter ;;
+            2) clear; show_nginx_logs; press_enter ;;
+            3) clear; show_pihole_logs; press_enter ;;
+            4) clear; show_searxng_logs; press_enter ;;
+            5) 
+                clear
+                print_info "Following live logs... Press Ctrl+C to stop"
+                follow_logs
+                ;;
+            b|B) return ;;
+            *) print_error "Invalid option" && sleep 1 ;;
+        esac
+    done
+}
+
+# Status & Monitoring Menu
+status_monitoring_menu() {
+    while true; do
+        clear
+        print_menu_header "Status & Monitoring"
+        
+        print_menu_item "1" "Quick Status Check" "⚡"
+        print_menu_item "2" "Detailed System Status" "📊"
+        print_menu_item "3" "Service Health Check" "❤️"
+        print_menu_item "4" "Resource Usage" "💾"
+        print_menu_item "5" "Network Diagnostics" "🌐"
+        print_menu_item "6" "SSL Certificate Status" "🔒"
+        
+        echo ""
+        print_separator
+        print_menu_item "b" "Back to Main Menu" "⬅️"
+        echo ""
+        
+        echo -n -e "${BLUE}❓ Select option: ${NC}"
+        read -r choice
+        
+        case "$choice" in
+            1) 
+                clear
+                check_services_status
+                press_enter
+                ;;
+            2) 
+                clear
+                show_nginx_status
+                echo ""
+                show_pihole_status
+                echo ""
+                show_searxng_status
+                press_enter
+                ;;
+            3) 
+                clear
+                print_header "Service Health Check"
+                check_services_status
+                press_enter
+                ;;
+            4) 
+                clear
+                show_resource_usage
+                press_enter
+                ;;
+            5) 
+                clear
+                run_network_diagnostics
+                press_enter
+                ;;
+            6) 
+                clear
+                check_certificate
+                press_enter
+                ;;
+            b|B) return ;;
+            *) print_error "Invalid option" && sleep 1 ;;
+        esac
+    done
+}
+
+# Security & Authentication Menu
+security_menu() {
+    while true; do
+        clear
+        print_menu_header "Security & Authentication"
+        
+        print_menu_item "1" "Reset Pi-hole Password" "🔑"
+        print_menu_item "2" "Update SSL Certificates" "🔒"
+        print_menu_item "3" "Upgrade to Trusted Certificates" "✅"
+        print_menu_item "4" "Check Certificate Status" "📋"
+        print_menu_item "5" "View Security Settings" "🛡️"
+        
+        echo ""
+        print_separator
+        print_menu_item "b" "Back to Main Menu" "⬅️"
+        echo ""
+        
+        echo -n -e "${BLUE}❓ Select option: ${NC}"
+        read -r choice
+        
+        case "$choice" in
+            1) 
+                clear
+                reset_pihole_password
+                press_enter
+                ;;
+            2) 
+                clear
+                renew_certificate
+                press_enter
+                ;;
+            3) 
+                clear
+                upgrade_to_trusted_cert
+                press_enter
+                ;;
+            4) 
+                clear
+                check_certificate
+                press_enter
+                ;;
+            5) 
+                clear
+                if load_env; then
+                    show_env_summary
+                else
+                    print_error "Environment not configured"
+                fi
+                press_enter
+                ;;
+            b|B) return ;;
+            *) print_error "Invalid option" && sleep 1 ;;
+        esac
+    done
+}
+
+# Network & Connectivity Menu
+network_menu() {
+    while true; do
+        clear
+        print_menu_header "Network & Connectivity"
+        
+        print_menu_item "1" "Run Network Diagnostics" "🔍"
+        print_menu_item "2" "Test Web Interfaces" "🌐"
+        print_menu_item "3" "Test DNS Resolution" "🎯"
+        print_menu_item "4" "Fix Network Issues" "🔧"
+        print_menu_item "5" "Check Port Availability" "🚪"
+        print_menu_item "6" "Show Access Information" "ℹ️"
+        
+        echo ""
+        print_separator
+        print_menu_item "b" "Back to Main Menu" "⬅️"
+        echo ""
+        
+        echo -n -e "${BLUE}❓ Select option: ${NC}"
+        read -r choice
+        
+        case "$choice" in
+            1) 
+                clear
+                run_network_diagnostics
+                press_enter
+                ;;
+            2) 
+                clear
+                test_web_interfaces
+                press_enter
+                ;;
+            3) 
+                clear
+                if load_env; then
+                    test_dns_resolution "$SERVER_IP"
+                else
+                    print_error "Environment not configured"
+                fi
+                press_enter
+                ;;
+            4) 
+                clear
+                fix_network_issues
+                press_enter
+                ;;
+            5) 
+                clear
+                check_ports
+                press_enter
+                ;;
+            6) 
+                clear
+                show_access_info
+                press_enter
+                ;;
+            b|B) return ;;
+            *) print_error "Invalid option" && sleep 1 ;;
+        esac
+    done
+}
+
+# Configuration & Settings Menu
+configuration_menu() {
+    while true; do
+        clear
+        print_menu_header "Configuration & Settings"
+        
+        print_menu_item "1" "View Current Configuration" "📋"
+        print_menu_item "2" "Reconfigure Environment" "⚙️"
+        print_menu_item "3" "Update SearXNG Settings" "🔍"
+        print_menu_item "4" "Backup Configuration" "💾"
+        print_menu_item "5" "Validate Configuration" "✅"
+        
+        echo ""
+        print_separator
+        print_menu_item "b" "Back to Main Menu" "⬅️"
+        echo ""
+        
+        echo -n -e "${BLUE}❓ Select option: ${NC}"
+        read -r choice
+        
+        case "$choice" in
+            1) 
+                clear
+                if load_env; then
+                    show_env_summary
+                else
+                    print_error "Environment not configured - run ./configure first"
+                fi
+                press_enter
+                ;;
+            2) 
+                clear
+                if confirm "This will reconfigure your environment. Continue?"; then
+                    exec ./configure
+                fi
+                ;;
+            3) 
+                clear
+                update_searxng_config
+                press_enter
+                ;;
+            4) 
+                clear
+                backup_container_data
+                press_enter
+                ;;
+            5) 
+                clear
+                if validate_env; then
+                    print_success "Configuration is valid"
+                else
+                    print_error "Configuration validation failed"
+                fi
+                press_enter
+                ;;
+            b|B) return ;;
+            *) print_error "Invalid option" && sleep 1 ;;
+        esac
+    done
+}
+
+# Maintenance & Troubleshooting Menu
+maintenance_menu() {
+    while true; do
+        clear
+        print_menu_header "Maintenance & Troubleshooting"
+        
+        print_menu_item "1" "Run Full Diagnostics" "🔍"
+        print_menu_item "2" "Clean Docker Resources" "🧹"
+        print_menu_item "3" "Backup All Data" "💾"
+        print_menu_item "4" "Reset All Services" "🔄"
+        print_menu_item "5" "View System Information" "ℹ️"
+        print_menu_item "6" "Emergency Stop" "🚨"
+        
+        echo ""
+        print_separator
+        print_menu_item "b" "Back to Main Menu" "⬅️"
+        echo ""
+        
+        echo -n -e "${BLUE}❓ Select option: ${NC}"
+        read -r choice
+        
+        case "$choice" in
+            1) 
+                clear
+                run_network_diagnostics
+                echo ""
+                check_services_status
+                press_enter
+                ;;
+            2) 
+                clear
+                cleanup_docker
+                press_enter
+                ;;
+            3) 
+                clear
+                backup_container_data
+                press_enter
+                ;;
+            4) 
+                clear
+                if confirm "This will stop and rebuild all services. Continue?" "n"; then
+                    rebuild_services
+                fi
+                press_enter
+                ;;
+            5) 
+                clear
+                show_system_info
+                press_enter
+                ;;
+            6) 
+                clear
+                if confirm "Emergency stop all services?" "n"; then
+                    stop_services
+                    print_warning "All services stopped"
+                fi
+                press_enter
+                ;;
+            b|B) return ;;
+            *) print_error "Invalid option" && sleep 1 ;;
+        esac
+    done
+}
+
+# Information & Help Menu
+info_help_menu() {
+    while true; do
+        clear
+        print_menu_header "Information & Help"
+        
+        print_menu_item "1" "Show Access URLs & Passwords" "🔗"
+        print_menu_item "2" "Show Version Information" "📦"
+        print_menu_item "3" "Network Architecture" "🏗️"
+        print_menu_item "4" "Quick Start Guide" "🚀"
+        print_menu_item "5" "Troubleshooting Tips" "💡"
+        print_menu_item "6" "About Privacy Hub" "ℹ️"
+        
+        echo ""
+        print_separator
+        print_menu_item "b" "Back to Main Menu" "⬅️"
+        echo ""
+        
+        echo -n -e "${BLUE}❓ Select option: ${NC}"
+        read -r choice
+        
+        case "$choice" in
+            1) 
+                clear
+                show_access_info
+                press_enter
+                ;;
+            2) 
+                clear
+                show_version_info
+                press_enter
+                ;;
+            3) 
+                clear
+                show_architecture_info
+                press_enter
+                ;;
+            4) 
+                clear
+                show_quick_start
+                press_enter
+                ;;
+            5) 
+                clear
+                show_troubleshooting_tips
+                press_enter
+                ;;
+            6) 
+                clear
+                show_about_info
+                press_enter
+                ;;
+            b|B) return ;;
+            *) print_error "Invalid option" && sleep 1 ;;
+        esac
+    done
+}
+
+# Helper functions for info menu
+show_access_info() {
+    print_header "Access Information"
+    
+    if load_env; then
+        echo ""
+        echo -e "${BLUE}🌐 Web Interfaces:${NC}"
+        echo -e "   🔍 Private Search:  ${GREEN}https://$SERVER_IP/${NC}"
+        echo -e "   🛡️  Pi-hole Admin:   ${GREEN}https://$SERVER_IP/admin${NC}"
+        echo -e "   ❤️  Health Check:    ${GREEN}https://$SERVER_IP/health${NC}"
+        echo ""
+        echo -e "   🌐 Hostname Access:  ${GREEN}https://$HOSTNAME.$LOCAL_DOMAIN${NC}"
+        echo ""
+        echo -e "${BLUE}🔑 Authentication:${NC}"
+        echo -e "   Pi-hole Password: ${GREEN}$PIHOLE_PASSWORD${NC}"
+        echo ""
+        echo -e "${BLUE}📝 Router Configuration:${NC}"
+        echo -e "   Set router DNS to: ${GREEN}$SERVER_IP${NC}"
+        echo -e "   All devices will use privacy-protected DNS"
+    else
+        print_error "Environment not configured - run ./configure first"
+    fi
+}
+
+show_version_info() {
+    print_header "Version Information"
+    
+    echo ""
+    echo -e "${BLUE}🐳 Docker Environment:${NC}"
+    echo "   Docker: $(docker --version | cut -d' ' -f3 | cut -d',' -f1)"
+    echo "   Docker Compose: $(docker compose version --short)"
+    echo ""
+    
+    echo -e "${BLUE}🛡️ Privacy Hub Services:${NC}"
+    if docker compose ps --services --filter "status=running" | grep -q pihole; then
+        local pihole_version=$(docker exec pihole pihole version | grep "Pi-hole version" | cut -d' ' -f3 2>/dev/null || echo "Unknown")
+        echo "   Pi-hole: $pihole_version"
+    else
+        echo "   Pi-hole: Not running"
+    fi
+    
+    if docker compose ps --services --filter "status=running" | grep -q nginx; then
+        echo "   NGINX: $(docker exec nginx nginx -v 2>&1 | cut -d' ' -f3 | cut -d'/' -f2)"
+    else
+        echo "   NGINX: Not running"
+    fi
+    
+    if docker compose ps --services --filter "status=running" | grep -q searxng; then
+        echo "   SearXNG: Latest"
+    else
+        echo "   SearXNG: Not running"
+    fi
+}
+
+show_architecture_info() {
+    print_header "Network Architecture"
+    
+    echo ""
+    echo -e "${BLUE}🏗️ Architecture Overview:${NC}"
+    echo ""
+    echo "   Devices → Router → Raspberry Pi 4 → Internet"
+    echo "                          ↓"
+    echo "                   NGINX (53, 80, 443)"
+    echo "                          ↓"
+    echo "              Internal Docker Network"
+    echo "                          ↓"
+    echo "           Pi-hole:80    SearXNG:8080"
+    echo "           (DNS+Admin)   (Search)"
+    echo ""
+    echo -e "${BLUE}📋 Traffic Flow:${NC}"
+    echo "   • DNS queries → Pi-hole (blocks ads/trackers)"
+    echo "   • Web requests → NGINX → appropriate service"
+    echo "   • All services isolated in Docker network"
+    echo "   • Only NGINX exposed to external network"
+}
+
+show_quick_start() {
+    print_header "Quick Start Guide"
+    
+    echo ""
+    echo -e "${BLUE}🚀 Getting Started:${NC}"
+    echo ""
+    echo "1. ${GREEN}Configure Router DNS:${NC}"
+    echo "   Set router DNS server to your Pi's IP"
+    echo "   All devices will automatically use privacy DNS"
+    echo ""
+    echo "2. ${GREEN}Access Services:${NC}"
+    if load_env; then
+        echo "   Search: ${GREEN}https://$SERVER_IP/${NC}"
+        echo "   Pi-hole: ${GREEN}https://$SERVER_IP/admin${NC}"
+    else
+        echo "   Search: https://your-pi-ip/"
+        echo "   Pi-hole: https://your-pi-ip/admin"
+    fi
+    echo ""
+    echo "3. ${GREEN}Accept SSL Certificate:${NC}"
+    echo "   Browser will warn about self-signed certificate"
+    echo "   Click 'Advanced' → 'Proceed' to continue"
+    echo "   Or run SSL upgrade for trusted certificates"
+    echo ""
+    echo "4. ${GREEN}Enjoy Privacy:${NC}"
+    echo "   All devices now have ad-blocking and private search!"
+}
+
+show_troubleshooting_tips() {
+    print_header "Troubleshooting Tips"
+    
+    echo ""
+    echo -e "${BLUE}🔧 Common Issues:${NC}"
+    echo ""
+    echo "• ${YELLOW}Services won't start:${NC}"
+    echo "  Run: Service Management → Restart All Services"
+    echo ""
+    echo "• ${YELLOW}Can't access web interface:${NC}"
+    echo "  Check: Network & Connectivity → Run Diagnostics"
+    echo ""
+    echo "• ${YELLOW}Pi-hole login fails:${NC}"
+    echo "  Use: Security & Authentication → Reset Password"
+    echo ""
+    echo "• ${YELLOW}DNS not working:${NC}"
+    echo "  Verify router DNS is set to Pi's IP address"
+    echo ""
+    echo "• ${YELLOW}SSL certificate warnings:${NC}"
+    echo "  Run: Security & Authentication → Upgrade Certificates"
+    echo ""
+    echo -e "${BLUE}🔍 Diagnostic Commands:${NC}"
+    echo "• Status & Monitoring → Run Network Diagnostics"
+    echo "• Maintenance → Run Full Diagnostics"
+    echo "• Service Management → View Service Logs"
+}
+
+show_about_info() {
+    print_header "About Privacy Hub"
+    
+    echo ""
+    echo -e "${BLUE}🛡️ Privacy Hub${NC}"
+    echo "   Version: 2.0.0"
+    echo "   Local Network Privacy Gateway"
+    echo ""
+    echo -e "${BLUE}🎯 Purpose:${NC}"
+    echo "   Transform your Raspberry Pi into a privacy-focused"
+    echo "   network gateway providing ad-blocking and private"
+    echo "   search for your entire home network."
+    echo ""
+    echo -e "${BLUE}🔧 Components:${NC}"
+    echo "   • Pi-hole: Network-wide ad & tracker blocking"
+    echo "   • SearXNG: Private search without tracking"
+    echo "   • NGINX: Secure reverse proxy & SSL termination"
+    echo ""
+    echo -e "${BLUE}🌐 Benefits:${NC}"
+    echo "   • Block ads on ALL devices automatically"
+    echo "   • Private search with no tracking"
+    echo "   • Secure HTTPS access to all services"
+    echo "   • Professional architecture for reliability"
+    echo ""
+    echo -e "${BLUE}📚 Documentation:${NC}"
+    echo "   • README.md - Main documentation"
+    echo "   • docs/INSTALLATION.md - Installation guide"
+    echo "   • docs/NETWORK_ARCHITECTURE.md - Technical details"
+}
+
+show_system_info() {
+    print_header "System Information"
+    
+    echo ""
+    echo -e "${BLUE}💻 System:${NC}"
+    echo "   OS: $(uname -s -r)"
+    echo "   Hostname: $(hostname)"
+    echo "   Uptime: $(uptime -p 2>/dev/null || uptime)"
+    echo ""
+    
+    echo -e "${BLUE}💾 Memory:${NC}"
+    free -h | grep -E "(Mem|Swap):"
+    echo ""
+    
+    echo -e "${BLUE}💽 Disk Usage:${NC}"
+    df -h / | tail -1
+    echo ""
+    
+    if load_env; then
+        echo -e "${BLUE}🌐 Network:${NC}"
+        echo "   Server IP: $SERVER_IP"
+        echo "   Hostname: $HOSTNAME.$LOCAL_DOMAIN"
+    fi
+}
+
+# Command-line argument handling for backwards compatibility
+handle_cli_args() {
+    case "${1:-help}" in
+        "status"|"st") clear; check_services_status; exit 0 ;;
+        "logs"|"log") clear; show_logs "$2"; exit 0 ;;
+        "restart"|"r") clear; restart_services; exit 0 ;;
+        "start") clear; start_services; exit 0 ;;
+        "stop") clear; stop_services; exit 0 ;;
+        "password"|"pass") clear; reset_pihole_password; exit 0 ;;
+        "ssl"|"cert") clear; upgrade_to_trusted_cert; exit 0 ;;
+        "diagnose"|"diag") clear; run_network_diagnostics; exit 0 ;;
+        "info"|"i") clear; show_access_info; exit 0 ;;
+        "help"|"h") show_cli_help; exit 0 ;;
+        "") ;; # No arguments - show interactive menu
+        *) print_error "Unknown command: $1"; show_cli_help; exit 1 ;;
+    esac
+}
+
+show_cli_help() {
+    print_header "Privacy Hub Management"
+    echo ""
+    echo -e "${BLUE}🎯 Interactive Mode:${NC}"
+    echo "   ${GREEN}./manage${NC}           Show interactive menu"
+    echo ""
+    echo -e "${BLUE}⚡ Quick Commands:${NC}"
+    echo "   ${GREEN}./manage status${NC}     Show service status"
+    echo "   ${GREEN}./manage restart${NC}    Restart all services"
+    echo "   ${GREEN}./manage password${NC}   Reset Pi-hole password"
+    echo "   ${GREEN}./manage ssl${NC}        Upgrade SSL certificates"
+    echo "   ${GREEN}./manage diagnose${NC}   Run network diagnostics"
+    echo "   ${GREEN}./manage info${NC}       Show access information"
+    echo ""
+    echo -e "${BLUE}💡 Tip:${NC} Run ${GREEN}./manage${NC} without arguments for the full interactive menu"
+}
+
+# Main function
+main() {
+    # Handle command-line arguments
+    if [ $# -gt 0 ]; then
+        handle_cli_args "$@"
+    fi
+    
+    # Interactive menu mode
+    while true; do
+        show_main_menu
+        
+        echo -n -e "${BLUE}❓ Select option: ${NC}"
+        read -r choice
+        
+        case "$choice" in
+            1) service_management_menu ;;
+            2) status_monitoring_menu ;;
+            3) security_menu ;;
+            4) network_menu ;;
+            5) configuration_menu ;;
+            6) maintenance_menu ;;
+            7) info_help_menu ;;
+            q|Q|quit|exit) 
+                clear
+                print_success "Thank you for using Privacy Hub!"
+                echo "Your privacy-protected network is still running."
+                exit 0 
+                ;;
+            *) print_error "Invalid option" && sleep 1 ;;
+        esac
+    done
+}
+
+# Run main function
+main "$@"

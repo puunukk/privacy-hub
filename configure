@@ -1,0 +1,198 @@
+#!/bin/bash
+# Privacy Hub Configuration Script
+# Interactive setup of environment variables
+
+set -e
+
+# Source utilities
+source scripts/utils/colors.sh
+source scripts/utils/prompts.sh
+source scripts/utils/validation.sh
+source scripts/core/env.sh
+
+main() {
+    print_header "Privacy Hub Configuration"
+    
+    # Check system requirements
+    print_step "Checking system requirements..."
+    if ! check_system_requirements; then
+        echo ""
+        print_error "System requirements not met. Please fix the issues above and try again."
+        exit 1
+    fi
+    
+    print_success "System requirements check passed!"
+    
+    # Backup existing environment if it exists
+    if [ -f ".env" ]; then
+        backup_env
+    fi
+    
+    # Auto-detect server IP
+    print_step "Detecting network configuration..."
+    local server_ip
+    if server_ip=$(detect_server_ip); then
+        print_success "Detected server IP: $server_ip"
+    else
+        print_error "Could not auto-detect server IP"
+        prompt_with_default "Enter server IP address" "192.168.1.100" server_ip
+        
+        if ! validate_ip "$server_ip"; then
+            print_error "Invalid IP address format"
+            exit 1
+        fi
+    fi
+    
+    # Network validation
+    if ! check_network "$server_ip"; then
+        if ! confirm "Network validation failed. Continue anyway?"; then
+            exit 1
+        fi
+    fi
+    
+    # Get configuration from user
+    print_header "Privacy Hub Configuration Setup"
+    echo ""
+    echo -e "${BLUE}Please configure your Privacy Hub settings.${NC}"
+    echo -e "${DIM}Press Enter to use default values shown in brackets.${NC}"
+    echo ""
+    
+    # Basic settings
+    local hostname local_domain timezone
+    prompt_with_default "Hostname for your Pi" "privacy-hub" hostname
+    prompt_with_default "Local domain" "local" local_domain
+    prompt_with_default "Timezone" "$(timedatectl show --property=Timezone --value 2>/dev/null || echo 'UTC')" timezone
+    
+    # Generate secure passwords
+    print_step "Generating secure credentials..."
+    local pihole_password searxng_secret_key
+    pihole_password=$(generate_password 12)
+    searxng_secret_key=$(generate_secret_key 64)
+    
+    print_success "Generated secure Pi-hole password: $pihole_password"
+    print_success "Generated SearXNG secret key"
+    
+    # SearXNG configuration
+    echo ""
+    print_header "SearXNG Search Engine Configuration"
+    
+    # Theme selection
+    local searxng_theme
+    echo ""
+    echo "Available themes:"
+    echo "1) ${GREEN}simple${NC} - Clean, dark theme (recommended)"
+    echo "2) ${BLUE}oscar${NC} - Feature-rich theme with more options"
+    echo "3) ${PURPLE}pix-art${NC} - Image-focused theme"
+    echo ""
+    
+    while true; do
+        echo -n -e "${BLUE}❓ Select theme [1-3]: ${NC}"
+        read -r theme_choice
+        
+        case "$theme_choice" in
+            1|"") searxng_theme="simple"; break ;;
+            2) searxng_theme="oscar"; break ;;
+            3) searxng_theme="pix-art"; break ;;
+            *) print_error "Please select 1, 2, or 3" ;;
+        esac
+    done
+    
+    # Safe search setting
+    local searxng_safe_search
+    echo ""
+    echo "Safe search options:"
+    echo "0) ${RED}Off${NC} - No content filtering"
+    echo "1) ${YELLOW}Moderate${NC} - Filter explicit content (recommended)"
+    echo "2) ${GREEN}Strict${NC} - Maximum content filtering"
+    echo ""
+    
+    while true; do
+        echo -n -e "${BLUE}❓ Select safe search level [0-2]: ${NC}"
+        read -r safe_choice
+        
+        case "$safe_choice" in
+            0) searxng_safe_search="0"; break ;;
+            1|"") searxng_safe_search="1"; break ;;
+            2) searxng_safe_search="2"; break ;;
+            *) print_error "Please select 0, 1, or 2" ;;
+        esac
+    done
+    
+    # Language setting
+    local searxng_lang
+    echo ""
+    echo "Common languages:"
+    echo "1) ${GREEN}en${NC} - English (default)"
+    echo "2) ${BLUE}et${NC} - Estonian"
+    echo "3) ${YELLOW}de${NC} - German"
+    echo "4) ${PURPLE}fr${NC} - French"
+    echo "5) ${CYAN}es${NC} - Spanish"
+    echo "6) Other (enter code manually)"
+    echo ""
+    
+    while true; do
+        echo -n -e "${BLUE}❓ Select language [1-6]: ${NC}"
+        read -r lang_choice
+        
+        case "$lang_choice" in
+            1|"") searxng_lang="en"; break ;;
+            2) searxng_lang="et"; break ;;
+            3) searxng_lang="de"; break ;;
+            4) searxng_lang="fr"; break ;;
+            5) searxng_lang="es"; break ;;
+            6) 
+                echo -n -e "${BLUE}❓ Enter language code (e.g., 'it' for Italian): ${NC}"
+                read -r searxng_lang
+                if [ -n "$searxng_lang" ]; then
+                    break
+                else
+                    searxng_lang="en"
+                    break
+                fi
+                ;;
+            *) print_error "Please select 1-6" ;;
+        esac
+    done
+    
+    # Create environment file
+    print_step "Creating environment configuration..."
+    if create_env_file "$server_ip" "$hostname" "$local_domain" "$timezone" \
+                      "$pihole_password" "$searxng_secret_key" "$searxng_theme" \
+                      "$searxng_safe_search" "$searxng_lang"; then
+        
+        # Set file permissions
+        chmod 600 .env
+        
+        print_success "Environment configuration created successfully!"
+        
+        # Show summary
+        echo ""
+        show_env_summary
+        
+        echo ""
+        print_header "Configuration Complete!"
+        
+        echo ""
+        print_success "Privacy Hub has been configured successfully!"
+        echo ""
+        echo -e "${BLUE}📋 Next steps:${NC}"
+        echo "1. Run ${GREEN}./setup${NC} to deploy Privacy Hub"
+        echo "2. Configure your router to use ${GREEN}$server_ip${NC} as DNS server"
+        echo "3. Access your services at ${GREEN}https://$server_ip${NC}"
+        echo ""
+        echo -e "${BLUE}🔑 Important:${NC}"
+        echo "Pi-hole admin password: ${GREEN}$pihole_password${NC}"
+        echo "(This password is also saved in the .env file)"
+        
+    else
+        print_error "Failed to create environment configuration"
+        exit 1
+    fi
+}
+
+# Make scripts executable automatically
+print_step "Setting up script permissions..."
+find scripts/ -name "*.sh" -type f -exec chmod +x {} \; 2>/dev/null || true
+
+# Run main function
+main "$@"

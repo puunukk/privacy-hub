@@ -3,4 +3,6 @@
 
 # Local services
 127.0.0.1 pihole.local
-127.0.0.1 searxng.local 
+127.0.0.1 searxng.local
+
+docker exec pihole curl -s https://localhost/admin/api.php?auth 2>/dev/null || echo "No auth endpoint"
