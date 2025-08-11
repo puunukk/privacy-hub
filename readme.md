@@ -18,7 +18,7 @@ Privacy Hub is a **complete local network privacy solution** that runs on a Rasp
 - 📱 **Zero device configuration** - Works automatically for all connected devices
 - 🌐 **Local network focus** - Designed for home/office networks
 
-Perfect for **home networks** or anywhere you want **privacy-by-default**.
+Perfect for **home networks**, **small offices**, or anywhere you want **privacy-by-default**.
 
 ## 🏗️ **Architecture Overview**
 
@@ -30,7 +30,7 @@ Your Devices → Router → Raspberry Pi 4 (Privacy Hub) → Internet
               ┌─────────────────────────────────┐
               │     Internal Docker Network     │
               │                                 │
-              │  Pi-hole:80    SearXNG:8080    │
+              │  Pi-hole:80     SearXNG:8080    │
               │  (DNS + Admin)  (Search)        │
               └─────────────────────────────────┘
 ```
@@ -54,10 +54,10 @@ Your Devices → Router → Raspberry Pi 4 (Privacy Hub) → Internet
 git clone https://github.com/your-username/privacy-hub.git
 cd privacy-hub
 
-# Configure environment (interactive setup)
+# Configure environment (auto-generates secure passwords)
 ./configure
 
-# Deploy privacy hub  
+# Deploy privacy hub
 ./setup
 ```
 
@@ -70,27 +70,27 @@ cd privacy-hub
 
 Privacy Hub includes comprehensive management tools:
 
-### **Interactive Management:**
+### **Main Management:**
 ```bash
-./manage                       # Full interactive menu system
+./manage status      # Check all services
+./manage restart     # Restart all services  
+./manage logs        # View service logs
+./manage password    # Reset Pi-hole password
+./manage ssl         # Update SSL certificates
 ```
 
-### **Quick Commands:**
+### **Troubleshooting:**
 ```bash
-./manage status               # Check all services  
-./manage restart              # Restart all services
-./manage password             # Reset Pi-hole password
+./manage diagnose          # Full system diagnostics
+./manage network           # Fix network connectivity
+./manage debug             # Deep debugging tools
+```
+
+### **Configuration:**
+```bash
+./configure                   # Reconfigure environment
 ./manage ssl                  # Upgrade SSL certificates
-./manage diagnose             # Run network diagnostics
-./manage info                 # Show access URLs & passwords
 ```
-
-### **Professional Features:**
-- 🎯 **Interactive Menus**: Navigate complex operations with ease
-- 📊 **Real-time Monitoring**: Service health and resource usage
-- 🔧 **Advanced Diagnostics**: Network connectivity and SSL testing  
-- 💾 **Backup & Restore**: Data protection and migration tools
-- 🔒 **Security Management**: Password resets and certificate upgrades
 
 ## 🌐 **Access Your Services**
 
@@ -160,7 +160,7 @@ docker exec pihole pihole -b example.com
 ### **SSL Certificate Management:**
 ```bash
 # Upgrade to mkcert-generated certificates (no browser warnings)
-./scripts/upgrade-ssl.sh
+./manage ssl
 
 # Manual certificate generation
 docker exec nginx openssl req -x509 -nodes -days 365 ...
@@ -201,11 +201,15 @@ privacy-hub/
 ├── docker-compose.yml          # Service orchestration  
 ├── .env                        # Environment configuration (auto-generated)
 ├── scripts/                    # Management tools
-│   ├── configure.sh           # Environment setup
-│   ├── setup.sh               # Main deployment
-│   ├── manage.sh              # Service management
+│   ├── configure.sh           # Environment setup      # old! #
+│   ├── setup.sh               # Main deployment        # old! #
+│   ├── manage.sh              # Service management     # old! #
 │   ├── diagnose.sh            # System diagnostics
 │   └── upgrade-ssl.sh         # SSL certificate management
+├── configure                   # Interactive environment setup
+├── setup                       # Automated deployment
+├── manage                      # Interactive management
+├── scripts/                    # Internal helpers (core/, services/, utils/)
 ├── nginx/                      # Reverse proxy configuration
 │   ├── nginx.conf             # Main proxy configuration
 │   ├── Dockerfile             # Custom nginx build

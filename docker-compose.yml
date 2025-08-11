@@ -50,6 +50,32 @@ services:
     networks:
       - internal
 
+  # Docker API Proxy - secure Docker socket access
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: docker-proxy
+    hostname: docker-proxy
+    # NO PORTS EXPOSED - internal only
+    environment:
+      # Minimal permissions for security
+      CONTAINERS: 1
+      IMAGES: 1
+      INFO: 1
+      NETWORKS: 0
+      VOLUMES: 0
+      SERVICES: 0
+      TASKS: 0
+      SECRETS: 0
+      POST: 1  # Allow start/stop/restart only
+      LOG_LEVEL: info
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    networks:
+      - internal
+
+  # NO FRONTEND CONTAINER - static files served by nginx
+
   # NGINX - ONLY PUBLIC-FACING SERVICE
   nginx:
     build: ./nginx
@@ -70,6 +96,7 @@ services:
     depends_on:
       - pihole
       - searxng
+      - docker-proxy
     networks:
       - internal
 

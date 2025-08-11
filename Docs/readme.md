@@ -1,3 +1,23 @@
+# Important: Legacy mixed guide (v1-style)
+
+This document contains legacy and mixed instructions. For the current, supported flow use these instead:
+
+- INSTALLATION: `Docs/INSTALLATION.md`
+- Raspberry Pi setup: `Docs/RASPBERRY_PI_SETUP.md`
+- Network details: `Docs/NETWORK_ARCHITECTURE.md`
+- SSL management: `Docs/SSL_GUIDE.md`
+- Pi-hole usage: `Docs/PI_HOLE_GUIDE.md`
+- SearXNG usage: `Docs/SEARXNG_GUIDE.md`
+
+Canonical commands and entrypoints:
+
+- Configure: `./configure`
+- Deploy: `./setup`
+- Manage: `./manage`
+- Use Docker Compose v2 syntax: `docker compose ...` (not `docker-compose`)
+
+The content below is retained for reference and will be retired after alignment with the canonical docs above.
+
 # Privacy Hub - Professional Raspberry Pi Network Security Setup
 
 ## Understanding What We're Building
@@ -266,6 +286,12 @@ http {
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
             proxy_set_header X-Forwarded-Host $host;
+        }
+
+        # Dashboard (production on Pi): static files served by nginx
+        location /dashboard {
+            alias /usr/share/nginx/html;
+            try_files $uri $uri/ /index.html;
         }
         
         # Pi-hole admin interface accessible via /admin path

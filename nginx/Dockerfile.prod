@@ -1,0 +1,40 @@
+###########
+# Builder #
+###########
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+# Copy minimal files first for better caching
+COPY frontend/package*.json ./
+COPY frontend/tsconfig*.json ./
+COPY frontend/tailwind.config.js ./
+COPY frontend/postcss.config.js ./
+COPY frontend/vite.config.ts ./
+
+RUN npm ci || npm install
+
+# Copy the rest of the frontend
+COPY frontend/src ./src
+COPY frontend/index.html ./
+
+# Build static assets
+RUN npm run build
+
+#########
+# NGINX #
+#########
+FROM nginx:alpine
+
+# Lightweight: add curl only if desired for health checks (optional)
+RUN apk add --no-cache curl
+
+# Copy production nginx config
+COPY nginx/nginx.prod.conf /etc/nginx/nginx.conf
+
+# Copy built frontend assets from builder
+RUN mkdir -p /usr/share/nginx/html
+COPY --from=builder /app/dist/ /usr/share/nginx/html/
+
+EXPOSE 53 80 443
+CMD ["nginx", "-g", "daemon off;"]

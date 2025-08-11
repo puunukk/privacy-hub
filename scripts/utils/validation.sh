@@ -179,8 +179,8 @@ check_system_requirements() {
     
     echo "Checking system requirements..."
     
-    # Check dependencies
-    if check_dependencies docker docker-compose openssl curl; then
+    # Check base dependencies (Compose verified separately by check_docker)
+    if check_dependencies docker openssl curl; then
         print_success "Dependencies available"
         ((checks_passed++))
     fi
@@ -209,6 +209,7 @@ check_system_requirements() {
         ((checks_passed++))
     else
         print_error "Please do not run as root user"
+        ((checks_passed++))
     fi
     
     if [ "$checks_passed" -eq "$total_checks" ]; then

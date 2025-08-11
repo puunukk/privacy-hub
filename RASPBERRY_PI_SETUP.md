@@ -112,17 +112,17 @@ sudo reboot
 git clone https://github.com/your-username/privacy-hub.git
 cd privacy-hub
 
-# Make scripts executable
-chmod +x scripts/*.sh
+# Make core scripts executable (if needed)
+chmod +x configure setup manage scripts/*.sh || true
 ```
 
 ### 3.2 Configure and Deploy
 ```bash
 # Step 1: Interactive configuration (creates .env file)
-./scripts/configure.sh
+./configure
 
 # Step 2: Deploy containers
-./scripts/setup.sh
+./setup
 ```
 
 The configuration script will:
@@ -240,12 +240,12 @@ sudo ufw status
 
 ### Change Default Passwords
 ```bash
-# Edit Pi-hole password in docker-compose.yml
-nano docker-compose.yml
-# Change WEBPASSWORD: 'secure123' to something stronger
+# Preferred: set via management tool
+./manage password          # interactively reset Pi-hole admin password
 
-# Restart Pi-hole
-./scripts/manage.sh restart pihole
+# Or update `.env` and restart services
+nano .env                  # update PIHOLE_PASSWORD=...
+./manage restart pihole
 ```
 
 ---
@@ -257,8 +257,8 @@ nano docker-compose.yml
 # Quick health check
 curl -k https://localhost/health
 
-# Detailed container status
-docker-compose ps
+# Detailed container status (Compose v2)
+docker compose ps
 
 # Resource usage
 htop
@@ -271,10 +271,10 @@ htop
 # Check logs
 ./scripts/manage.sh logs
 
-# Rebuild containers
-docker-compose down
-docker-compose build --no-cache
-docker-compose up -d
+# Rebuild containers (Compose v2)
+docker compose down
+docker compose build --no-cache
+docker compose up -d
 ```
 
 #### DNS not working
@@ -392,12 +392,12 @@ sudo apt update && sudo apt upgrade -y
 ./scripts/manage.sh start
 
 # Complete reset (keeps data)
-docker-compose down
-docker-compose up -d
+docker compose down
+docker compose up -d
 
 # Nuclear option (DELETES DATA)
-docker-compose down -v
-./scripts/setup.sh
+docker compose down -v
+./setup
 ```
 
 ---

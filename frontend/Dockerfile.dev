@@ -1,0 +1,23 @@
+# Development container - PROPERLY SETUP
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Install dependencies first
+COPY package*.json ./
+RUN npm install
+
+# Copy ALL config files needed for Vite
+COPY tsconfig*.json ./
+COPY tailwind.config.js ./
+COPY postcss.config.js ./
+COPY vite.config.ts ./
+
+# Copy source code (will be overridden by volume mounts)
+COPY src/ ./src/
+COPY index.html ./
+
+EXPOSE 3000
+
+# Run Vite dev server properly
+CMD ["npm", "run", "dev"]
