@@ -158,7 +158,7 @@ git clone https://github.com/your-repo/privacy-hub.git
 cd privacy-hub
 
 # Make scripts executable
-chmod +x configure setup manage
+chmod +x configure setup manage scripts/*.sh
 
 # Run interactive configuration
 ./configure

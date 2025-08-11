@@ -21,7 +21,7 @@ interface AppState {
 }
 
 class App extends Component<{}, AppState> {
-  private intervalId: number | null = null
+  private intervalId: ReturnType<typeof setInterval> | null = null
 
   constructor(props: {}) {
     super(props)

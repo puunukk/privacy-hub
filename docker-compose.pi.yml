@@ -75,8 +75,8 @@ services:
     container_name: nginx
     hostname: nginx
     depends_on:
-      - pihole
-      - searxng
+      # - pihole
+      # - searxng
       - docker-proxy
     ports:
       - "53:53/tcp"

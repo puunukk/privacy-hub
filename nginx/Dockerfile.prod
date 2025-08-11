@@ -16,6 +16,7 @@ RUN npm ci || npm install
 
 # Copy the rest of the frontend
 COPY frontend/src ./src
+COPY frontend/public ./public
 COPY frontend/index.html ./
 
 # Build static assets
@@ -35,6 +36,9 @@ COPY nginx/nginx.prod.conf /etc/nginx/nginx.conf
 # Copy built frontend assets from builder
 RUN mkdir -p /usr/share/nginx/html
 COPY --from=builder /app/dist/ /usr/share/nginx/html/
+
+# Disable access logs (save SD card)
+RUN ln -sf /dev/null /var/log/nginx/access.log
 
 EXPOSE 53 80 443
 CMD ["nginx", "-g", "daemon off;"]
