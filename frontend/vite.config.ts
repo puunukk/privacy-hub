@@ -24,8 +24,8 @@ export default defineConfig({
       { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
     ],
   },
-  // base: '',
-  base: '/dashboard/',
+  // Use root base so assets resolve from /assets regardless of subpath like /dashboard or /home
+  base: '/',
   build: {
     outDir: 'dist',
     sourcemap: false,

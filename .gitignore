@@ -29,10 +29,10 @@ docker-compose.override.yml
 Thumbs.db
 
 # Keep configuration templates but ignore generated files
-!pihole/custom.list
-!searxng/settings.yml
-!nginx/nginx.conf
-!scripts/
+#!pihole/custom.list
+#!searxng/settings.yml
+#!nginx/nginx.conf
+#!scripts/
 
 # --- General frontend / tooling outputs ---
 # Node.js dependencies (any level)
