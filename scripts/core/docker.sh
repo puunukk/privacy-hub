@@ -79,6 +79,32 @@ restart_services() {
     fi
 }
 
+# Update container images and restart services
+update_containers() {
+    print_step "Updating container images..."
+    
+    # Pull latest images
+    if docker compose pull; then
+        print_success "Container images updated"
+    else
+        print_warning "Some images failed to update, continuing..."
+    fi
+    
+    # Restart with updated images
+    if docker compose up -d --build; then
+        print_success "Services updated and restarted"
+        
+        # Wait for services to initialize
+        print_step "Waiting for services to initialize..."
+        sleep 10
+        
+        return 0
+    else
+        print_error "Failed to restart services with updated images"
+        return 1
+    fi
+}
+
 # Rebuild and restart services
 rebuild_services() {
     print_step "Rebuilding Privacy Hub services..."

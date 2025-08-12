@@ -80,9 +80,9 @@ main() {
     local searxng_theme
     echo ""
     echo "Available themes:"
-    echo "1) ${GREEN}simple${NC} - Clean, dark theme (recommended)"
-    echo "2) ${BLUE}oscar${NC} - Feature-rich theme with more options"
-    echo "3) ${PURPLE}pix-art${NC} - Image-focused theme"
+    echo -e "1) ${GREEN}simple${NC} - Clean, dark theme (recommended)"
+    echo -e "2) ${BLUE}oscar${NC} - Feature-rich theme with more options"
+    echo -e "3) ${PURPLE}pix-art${NC} - Image-focused theme"
     echo ""
     
     while true; do
@@ -101,9 +101,9 @@ main() {
     local searxng_safe_search
     echo ""
     echo "Safe search options:"
-    echo "0) ${RED}Off${NC} - No content filtering"
-    echo "1) ${YELLOW}Moderate${NC} - Filter explicit content (recommended)"
-    echo "2) ${GREEN}Strict${NC} - Maximum content filtering"
+    echo -e "0) ${RED}Off${NC} - No content filtering"
+    echo -e "1) ${YELLOW}Moderate${NC} - Filter explicit content (recommended)"
+    echo -e "2) ${GREEN}Strict${NC} - Maximum content filtering"
     echo ""
     
     while true; do
@@ -122,11 +122,11 @@ main() {
     local searxng_lang
     echo ""
     echo "Common languages:"
-    echo "1) ${GREEN}en${NC} - English (default)"
-    echo "2) ${BLUE}et${NC} - Estonian"
-    echo "3) ${YELLOW}de${NC} - German"
-    echo "4) ${PURPLE}fr${NC} - French"
-    echo "5) ${CYAN}es${NC} - Spanish"
+    echo -e "1) ${GREEN}en${NC} - English (default)"
+    echo -e "2) ${BLUE}et${NC} - Estonian"
+    echo -e "3) ${YELLOW}de${NC} - German"
+    echo -e "4) ${PURPLE}fr${NC} - French"
+    echo -e "5) ${CYAN}es${NC} - Spanish"
     echo "6) Other (enter code manually)"
     echo ""
     
@@ -176,12 +176,12 @@ main() {
         print_success "Privacy Hub has been configured successfully!"
         echo ""
         echo -e "${BLUE}📋 Next steps:${NC}"
-        echo "1. Run ${GREEN}./setup${NC} to deploy Privacy Hub"
-        echo "2. Configure your router to use ${GREEN}$server_ip${NC} as DNS server"
-        echo "3. Access your services at ${GREEN}https://$server_ip${NC}"
+        echo -e "1. Run ${GREEN}./setup${NC} to deploy Privacy Hub"
+        echo -e "2. Configure your router to use ${GREEN}$server_ip${NC} as DNS server"
+        echo -e "3. Access your services at ${GREEN}https://$server_ip${NC}"
         echo ""
         echo -e "${BLUE}🔑 Important:${NC}"
-        echo "Pi-hole admin password: ${GREEN}$pihole_password${NC}"
+        echo -e "Pi-hole admin password: ${GREEN}$pihole_password${NC}"
         echo "(This password is also saved in the .env file)"
         
     else

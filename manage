@@ -54,9 +54,10 @@ service_management_menu() {
         print_menu_item "1" "Start All Services" "▶️"
         print_menu_item "2" "Stop All Services" "⏹️"
         print_menu_item "3" "Restart All Services" "🔄"
-        print_menu_item "4" "Rebuild All Services" "🔨"
-        print_menu_item "5" "Individual Service Control" "⚙️"
-        print_menu_item "6" "View Service Logs" "📋"
+        print_menu_item "4" "Update Container Images" "🔄"
+        print_menu_item "5" "Rebuild All Services" "🔨"
+        print_menu_item "6" "Individual Service Control" "⚙️"
+        print_menu_item "7" "View Service Logs" "📋"
         
         echo ""
         print_separator
@@ -86,13 +87,20 @@ service_management_menu() {
                 ;;
             4) 
                 clear
+                if confirm "This will update container images and restart services. Continue?"; then
+                    update_containers
+                fi
+                press_enter
+                ;;
+            5) 
+                clear
                 if confirm "This will rebuild all containers. Continue?"; then
                     rebuild_services
                 fi
                 press_enter
                 ;;
-            5) individual_service_menu ;;
-            6) logs_menu ;;
+            6) individual_service_menu ;;
+            7) logs_menu ;;
             b|B) return ;;
             *) print_error "Invalid option" && sleep 1 ;;
         esac
@@ -735,11 +743,11 @@ show_quick_start() {
     echo ""
     echo -e "${BLUE}🚀 Getting Started:${NC}"
     echo ""
-    echo "1. ${GREEN}Configure Router DNS:${NC}"
+    echo -e "1. ${GREEN}Configure Router DNS:${NC}"
     echo "   Set router DNS server to your Pi's IP"
     echo "   All devices will automatically use privacy DNS"
     echo ""
-    echo "2. ${GREEN}Access Services:${NC}"
+    echo -e "2. ${GREEN}Access Services:${NC}"
     if load_env; then
         echo "   Search: ${GREEN}https://$SERVER_IP/${NC}"
         echo "   Pi-hole: ${GREEN}https://$SERVER_IP/admin${NC}"
@@ -748,12 +756,12 @@ show_quick_start() {
         echo "   Pi-hole: https://your-pi-ip/admin"
     fi
     echo ""
-    echo "3. ${GREEN}Accept SSL Certificate:${NC}"
+    echo -e "3. ${GREEN}Accept SSL Certificate:${NC}"
     echo "   Browser will warn about self-signed certificate"
     echo "   Click 'Advanced' → 'Proceed' to continue"
     echo "   Or run SSL upgrade for trusted certificates"
     echo ""
-    echo "4. ${GREEN}Enjoy Privacy:${NC}"
+    echo -e "4. ${GREEN}Enjoy Privacy:${NC}"
     echo "   All devices now have ad-blocking and private search!"
 }
 
@@ -763,19 +771,19 @@ show_troubleshooting_tips() {
     echo ""
     echo -e "${BLUE}🔧 Common Issues:${NC}"
     echo ""
-    echo "• ${YELLOW}Services won't start:${NC}"
+    echo -e "• ${YELLOW}Services won't start:${NC}"
     echo "  Run: Service Management → Restart All Services"
     echo ""
-    echo "• ${YELLOW}Can't access web interface:${NC}"
+    echo -e "• ${YELLOW}Can't access web interface:${NC}"
     echo "  Check: Network & Connectivity → Run Diagnostics"
     echo ""
-    echo "• ${YELLOW}Pi-hole login fails:${NC}"
+    echo -e "• ${YELLOW}Pi-hole login fails:${NC}"
     echo "  Use: Security & Authentication → Reset Password"
     echo ""
-    echo "• ${YELLOW}DNS not working:${NC}"
+    echo -e "• ${YELLOW}DNS not working:${NC}"
     echo "  Verify router DNS is set to Pi's IP address"
     echo ""
-    echo "• ${YELLOW}SSL certificate warnings:${NC}"
+    echo -e "• ${YELLOW}SSL certificate warnings:${NC}"
     echo "  Run: Security & Authentication → Upgrade Certificates"
     echo ""
     echo -e "${BLUE}🔍 Diagnostic Commands:${NC}"
@@ -847,6 +855,7 @@ handle_cli_args() {
         "restart"|"r") clear; restart_services; exit 0 ;;
         "start") clear; start_services; exit 0 ;;
         "stop") clear; stop_services; exit 0 ;;
+        "update") clear; update_containers; exit 0 ;;
         "password"|"pass") clear; reset_pihole_password; exit 0 ;;
         "ssl"|"cert") clear; upgrade_to_trusted_cert; exit 0 ;;
         "diagnose"|"diag") clear; run_network_diagnostics; exit 0 ;;
@@ -861,15 +870,16 @@ show_cli_help() {
     print_header "Privacy Hub Management"
     echo ""
     echo -e "${BLUE}🎯 Interactive Mode:${NC}"
-    echo "   ${GREEN}./manage${NC}           Show interactive menu"
+    echo -e "   ${GREEN}./manage${NC}           Show interactive menu"
     echo ""
     echo -e "${BLUE}⚡ Quick Commands:${NC}"
-    echo "   ${GREEN}./manage status${NC}     Show service status"
-    echo "   ${GREEN}./manage restart${NC}    Restart all services"
-    echo "   ${GREEN}./manage password${NC}   Reset Pi-hole password"
-    echo "   ${GREEN}./manage ssl${NC}        Upgrade SSL certificates"
-    echo "   ${GREEN}./manage diagnose${NC}   Run network diagnostics"
-    echo "   ${GREEN}./manage info${NC}       Show access information"
+    echo -e "   ${GREEN}./manage status${NC}     Show service status"
+    echo -e "   ${GREEN}./manage restart${NC}    Restart all services"
+    echo -e "   ${GREEN}./manage update${NC}     Update container images"
+    echo -e "   ${GREEN}./manage password${NC}   Reset Pi-hole password"
+    echo -e "   ${GREEN}./manage ssl${NC}        Upgrade SSL certificates"
+    echo -e "   ${GREEN}./manage diagnose${NC}   Run network diagnostics"
+    echo -e "   ${GREEN}./manage info${NC}       Show access information"
     echo ""
     echo -e "${BLUE}💡 Tip:${NC} Run ${GREEN}./manage${NC} without arguments for the full interactive menu"
 }
