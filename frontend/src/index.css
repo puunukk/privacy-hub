@@ -3,6 +3,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import safelist to ensure critical classes are included */
+@import './tailwind-safelist.css';
+
+@import "tailwindcss";
+
+body {
+  margin: 0;
+  padding: 0;
+}
 /* Selective CSS reset - avoid breaking TailwindCSS */
 #root {
   /* Essential resets without breaking CSS inheritance */
@@ -12,7 +21,7 @@
   
   /* Ensure it takes full viewport */
   display: block;
-  width: 100vw;
+  /*width: 100vw;*/
   min-height: 100vh;
 }
 

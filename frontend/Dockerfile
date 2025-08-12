@@ -17,7 +17,10 @@ RUN npm install
 COPY src/ ./src/
 COPY index.html ./
 
-# Build the app
+# Ensure Tailwind can scan all files properly
+ENV NODE_ENV=production
+
+# Build the app with verbose output for debugging
 RUN npm run build
 
 # Install a simple HTTP server
