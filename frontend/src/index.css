@@ -1,11 +1,4 @@
-/* Import Tailwind styles globally */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Import safelist to ensure critical classes are included */
-@import './tailwind-safelist.css';
-
+/* Import Tailwind CSS v4 - correct syntax for @tailwindcss/vite plugin */
 @import "tailwindcss";
 
 body {
