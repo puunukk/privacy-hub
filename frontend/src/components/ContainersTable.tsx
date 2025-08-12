@@ -16,8 +16,8 @@ class ContainersTableBase extends Component<ContainersTableProps, ContainersTabl
 
   render() {
     const { containers } = this.props
-    const safeContainers = containers || []
-    const runningCount = safeContainers.filter(c => c.State === 'running').length
+    const safeContainers = Array.isArray(containers) ? containers : []
+    const runningCount = safeContainers.filter(c => c?.State === 'running').length
     const totalCount = safeContainers.length
     
     return (

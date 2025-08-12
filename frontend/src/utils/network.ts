@@ -12,40 +12,7 @@ export interface RealNetworkInfo {
 
 export const detectRealNetworkInfo = async (): Promise<RealNetworkInfo> => {
   try {
-    // Try to get real network info from Docker API or browser APIs
-    
-    // Get the current frontend container's network information
-    const response = await fetch('/api/docker/containers/json?filters={"name":["frontend"]}')
-    if (response.ok) {
-      const containers = await response.json()
-      if (containers.length > 0) {
-        const frontend = containers[0]
-        const networks = Object.values(frontend.NetworkSettings.Networks)[0] as any
-        
-        if (networks?.IPAddress) {
-          // Extract network info from Docker container network
-          // const containerIP = networks.IPAddress // Unused for now
-          const gateway = networks.Gateway
-          const subnet = `${gateway.split('.').slice(0, 3).join('.')}.0/24`
-          
-          // Try to determine host IP (usually gateway + some offset)
-          const gatewayParts = gateway.split('.')
-          const hostIP = `${gatewayParts[0]}.${gatewayParts[1]}.${gatewayParts[2]}.${parseInt(gatewayParts[3]) + 1}`
-          
-          return {
-            hostIP,
-            hostname: 'privacy-hub',
-            gateway,
-            subnet,
-            isDhcpClient: true,
-            dnsServers: [gateway, '8.8.8.8'],
-            macAddress: 'detecting...'
-          }
-        }
-      }
-    }
-    
-    // Fallback: try to detect from browser location
+    // First, try to detect from browser location (more reliable)
     const currentHost = window.location.hostname
     if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
       // User is accessing via actual IP
@@ -55,13 +22,48 @@ export const detectRealNetworkInfo = async (): Promise<RealNetworkInfo> => {
       
       return {
         hostIP: currentHost,
-        hostname: 'privacy-hub',
+        hostname: currentHost || 'privacy-hub',
         gateway,
         subnet,
         isDhcpClient: true,
         dnsServers: [gateway, '8.8.8.8']
       }
     }
+    
+    // Try to get real network info from Docker API (optional)
+    try {
+      const response = await fetch('/api/docker/containers/json?filters={"name":["frontend"]}')
+      if (response.ok) {
+        const containers = await response.json()
+        if (containers.length > 0) {
+          const frontend = containers[0]
+          const networks = Object.values(frontend.NetworkSettings.Networks)[0] as any
+          
+          if (networks?.IPAddress) {
+            // Extract network info from Docker container network
+            const gateway = networks.Gateway
+            const subnet = `${gateway.split('.').slice(0, 3).join('.')}.0/24`
+            
+            // Try to determine host IP (usually gateway + some offset)
+            const gatewayParts = gateway.split('.')
+            const hostIP = `${gatewayParts[0]}.${gatewayParts[1]}.${gatewayParts[2]}.${parseInt(gatewayParts[3]) + 1}`
+            
+            return {
+              hostIP,
+              hostname: 'privacy-hub',
+              gateway,
+              subnet,
+              isDhcpClient: true,
+              dnsServers: [gateway, '8.8.8.8'],
+              macAddress: 'detecting...'
+            }
+          }
+        }
+      }
+    } catch (dockerError) {
+      console.warn('Docker API not available, using fallback network detection:', dockerError)
+    }
+
     
     // Last resort: reasonable defaults for development
     return {

@@ -4,7 +4,6 @@ import { PayloadAction } from '@reduxjs/toolkit'
 import { ContainerActionTypes } from '../actions/types'
 import {
   fetchContainersSuccess,
-  fetchContainersFailure,
   fetchDockerInfoSuccess,
   executeContainerActionSuccess,
   executeContainerActionFailure,
@@ -18,19 +17,31 @@ import type { RootState } from '../store'
 
 // API Functions
 async function fetchContainersAPI(): Promise<DockerContainer[]> {
-  const response = await fetch('/api/docker/containers/json?all=true')
-  if (!response.ok) {
-    throw new Error(`Failed to fetch containers: ${response.status}`)
+  try {
+    const response = await fetch('/api/docker/containers/json?all=true')
+    if (!response.ok) {
+      console.warn(`Docker API not available: ${response.status}`)
+      return [] // Return empty array instead of throwing
+    }
+    return response.json()
+  } catch (error) {
+    console.warn('Docker API not accessible:', error)
+    return [] // Return empty array instead of throwing
   }
-  return response.json()
 }
 
-async function fetchDockerInfoAPI(): Promise<DockerInfo> {
-  const response = await fetch('/api/docker/info')
-  if (!response.ok) {
-    throw new Error(`Failed to fetch Docker info: ${response.status}`)
+async function fetchDockerInfoAPI(): Promise<DockerInfo | null> {
+  try {
+    const response = await fetch('/api/docker/info')
+    if (!response.ok) {
+      console.warn(`Docker API not available: ${response.status}`)
+      return null // Return null instead of throwing
+    }
+    return response.json()
+  } catch (error) {
+    console.warn('Docker API not accessible:', error)
+    return null // Return null instead of throwing
   }
-  return response.json()
 }
 
 async function executeContainerActionAPI(containerId: string, action: ContainerAction): Promise<void> {
@@ -70,7 +81,7 @@ async function executeContainerActionAPI(containerId: string, action: ContainerA
 // Saga Workers
 function* fetchContainersSaga() {
   try {
-    const [containers, dockerInfo]: [DockerContainer[], DockerInfo] = yield Promise.all([
+    const [containers, dockerInfo]: [DockerContainer[], DockerInfo | null] = yield Promise.all([
       call(fetchContainersAPI),
       call(fetchDockerInfoAPI),
     ])
@@ -78,14 +89,20 @@ function* fetchContainersSaga() {
     const timestamp = Date.now()
     
     yield put(fetchContainersSuccess({ containers, timestamp }))
-    yield put(fetchDockerInfoSuccess({ dockerInfo, timestamp }))
-    yield put(setConnectionStatus({ isConnected: true }))
+    if (dockerInfo) {
+      yield put(fetchDockerInfoSuccess({ dockerInfo, timestamp }))
+    }
+    
+    // Consider connected if we got any data, even if partial
+    const isConnected = containers.length > 0 || dockerInfo !== null
+    yield put(setConnectionStatus({ isConnected }))
     
   } catch (error) {
     const timestamp = Date.now()
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorMessage = error instanceof Error ? error.message : 'Docker API unavailable'
     
-    yield put(fetchContainersFailure({ error: errorMessage, timestamp }))
+    // Still provide empty containers array for UI to work
+    yield put(fetchContainersSuccess({ containers: [], timestamp }))
     yield put(setConnectionStatus({ isConnected: false, error: errorMessage }))
   }
 }

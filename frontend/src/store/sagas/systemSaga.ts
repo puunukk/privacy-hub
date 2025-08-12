@@ -23,18 +23,25 @@ function* initializeAppSaga() {
       yield put(setTheme({ theme: 'light' }))
     }
 
-    // Start initial data fetching
-    yield put({ type: NetworkActionTypes.FETCH_NETWORK_INFO_REQUEST })
-    yield put({ type: ContainerActionTypes.FETCH_CONTAINERS_REQUEST })
-    
-    // Start container polling after initial load
-    yield delay(1000)
-    yield put({ type: ContainerActionTypes.START_CONTAINER_POLLING, payload: { interval: 10000 } })
-
+    // Mark app as initialized FIRST so UI can render
     yield put(initializeApp())
+
+    // Then start optional data fetching in background
+    try {
+      yield put({ type: NetworkActionTypes.FETCH_NETWORK_INFO_REQUEST })
+      yield put({ type: ContainerActionTypes.FETCH_CONTAINERS_REQUEST })
+      
+      // Start container polling after initial load
+      yield delay(1000)
+      yield put({ type: ContainerActionTypes.START_CONTAINER_POLLING, payload: { interval: 10000 } })
+    } catch (dataError) {
+      console.warn('Some data fetching failed, but app will continue to work:', dataError)
+    }
     
   } catch (error) {
     console.error('Failed to initialize app:', error)
+    // Still mark as initialized so UI can render
+    yield put(initializeApp())
   }
 }
 
