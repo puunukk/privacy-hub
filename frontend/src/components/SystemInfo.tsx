@@ -224,6 +224,7 @@ export class SystemInfo extends Component<SystemInfoProps, SystemInfoState> {
               {quickLinks.map((link) => (
                 link.onClick ? (
                   <button
+                    type="button"
                     key={link.name}
                     onClick={link.onClick}
                     className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors hover:shadow-sm ${link.color}`}
@@ -291,6 +292,7 @@ export class SystemInfo extends Component<SystemInfoProps, SystemInfoState> {
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">SearXNG Configuration</h2>
               <button
+                type="button"
                 onClick={this.closeSearxngConfig}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >

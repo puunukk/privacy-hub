@@ -26,6 +26,7 @@ export const ContainerActions = ({
     {containerState === 'running' ? (
       <>
         <button
+          type="button"
           onClick={() => onAction(containerId, 'stop')}
           disabled={isLoading}
           className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50"
@@ -34,6 +35,7 @@ export const ContainerActions = ({
           <Square className="h-4 w-4" />
         </button>
         <button
+          type="button"
           onClick={() => onAction(containerId, 'restart')}
           disabled={isLoading}
           className="p-1 text-yellow-600 hover:text-yellow-800 disabled:opacity-50"
@@ -44,6 +46,7 @@ export const ContainerActions = ({
       </>
     ) : (
       <button
+        type="button"
         onClick={() => onAction(containerId, 'start')}
         disabled={isLoading}
         className="p-1 text-green-600 hover:text-green-800 disabled:opacity-50"
@@ -56,6 +59,7 @@ export const ContainerActions = ({
     {/* Privacy Reset - for privacy tools like SearXNG */}
     {isPrivacyTool && (
       <button
+        type="button"
         onClick={() => {
           if (window.confirm(`🔐 Privacy Reset: This will rebuild "${containerName}" container, clearing all history and cached data. Continue?`)) {
             onAction(containerId, 'privacy_reset')
@@ -70,6 +74,7 @@ export const ContainerActions = ({
     )}
     
     <button
+      type="button"
       onClick={() => {
         if (window.confirm(`Are you sure you want to remove container "${containerName}"?`)) {
           onAction(containerId, 'remove')

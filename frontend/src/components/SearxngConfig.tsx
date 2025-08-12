@@ -198,6 +198,7 @@ ${Object.entries(settings.engines).map(([engine, config]) =>
         <nav className="flex space-x-2 pb-4">
           {(['general', 'search', 'server', 'ui', 'engines'] as const).map(tab => (
             <button
+              type="button"
               key={tab}
               onClick={() => this.setActiveTab(tab)}
               className={this.tabClasses(tab)}
@@ -343,6 +344,7 @@ ${Object.entries(settings.engines).map(([engine, config]) =>
       {/* Actions */}
       <div className="pt-6 border-t border-gray-200 dark:border-gray-700 flex justify-between">
         <button
+          type="button"
           onClick={this.resetToDefaults}
           className="flex items-center space-x-2 px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
         >
@@ -352,6 +354,7 @@ ${Object.entries(settings.engines).map(([engine, config]) =>
 
         <div className="flex space-x-3">
           <button
+            type="button"
             onClick={this.downloadConfig}
             className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >

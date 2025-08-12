@@ -43,7 +43,8 @@ class App extends Component<{}, AppState> {
     // Only start polling after initial load succeeds
     setTimeout(() => {
       if (!this.state.apiUnavailable) {
-        this.intervalId = setInterval(this.loadData, 5000)
+        // Poll every 10 seconds instead of 5 to reduce load
+        this.intervalId = setInterval(this.loadData, 10000)
       }
     }, 1000)
   }
@@ -58,7 +59,11 @@ class App extends Component<{}, AppState> {
     // Don't run if API is unavailable
     if (this.state.apiUnavailable) return
     
-    this.setState({ loading: true })
+    // Only show loading on initial load, not on polling updates
+    const isInitialLoad = this.state.containers.length === 0
+    if (isInitialLoad) {
+      this.setState({ loading: true })
+    }
     
     try {
       const [containersResponse, infoResponse] = await Promise.all([
@@ -73,13 +78,19 @@ class App extends Component<{}, AppState> {
       const containers = await containersResponse.json()
       const dockerInfo = await infoResponse.json()
 
-      this.setState({
-        containers,
-        dockerInfo,
-        loading: false,
-        error: null,
-        apiUnavailable: false
-      })
+      // Only update state if data actually changed to prevent unnecessary re-renders
+      const containersChanged = JSON.stringify(containers) !== JSON.stringify(this.state.containers)
+      const dockerInfoChanged = JSON.stringify(dockerInfo) !== JSON.stringify(this.state.dockerInfo)
+      
+      if (containersChanged || dockerInfoChanged || isInitialLoad) {
+        this.setState({
+          containers,
+          dockerInfo,
+          loading: false,
+          error: null,
+          apiUnavailable: false
+        })
+      }
     } catch (error) {
       console.warn('Docker API unavailable - stopping polling:', error)
       
@@ -145,8 +156,10 @@ class App extends Component<{}, AppState> {
   }
 
   refresh = () => {
-    this.setState({ loading: true })
-    this.loadData()
+    // Force a refresh by temporarily clearing containers to trigger loading state
+    this.setState({ containers: [], loading: true }, () => {
+      this.loadData()
+    })
   }
 
   render() {
@@ -163,6 +176,7 @@ class App extends Component<{}, AppState> {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {error && <ErrorAlert error={error} />}
             <button
+                type="button"
                 onClick={this.toggleTheme}
                 className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
                 title={`Switch to ${isDark ? 'light' : 'dark'} mode`}
