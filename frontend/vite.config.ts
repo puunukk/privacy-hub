@@ -25,7 +25,8 @@ export default defineConfig({
     ],
   },
   // Use root base so assets resolve from /assets regardless of subpath like /dashboard or /home
-  base: '/',
+  // base: '/',
+  base: '/dashboard/',
   build: {
     outDir: 'dist',
     sourcemap: false,
