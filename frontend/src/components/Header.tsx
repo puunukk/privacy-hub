@@ -1,53 +1,30 @@
 import { Component } from 'react'
-import { Server, RefreshCw, Sun, Moon } from 'lucide-react'
+import { Server, Sun, Moon } from 'lucide-react'
 import { Button } from './ui/Button'
+import { StatusIndicators } from './StatusIndicators'
+import { withSystemRedux } from '../store/hoc/withRedux'
+import type { SystemConnectedProps } from '../store/hoc/withRedux'
+import { SystemActionTypes } from '../store/actions/types'
 
-interface HeaderProps {
-  onRefresh: () => void
-}
+interface HeaderProps {}
 
-interface HeaderState {
-  isDark: boolean
-}
+interface HeaderState {}
 
-export class Header extends Component<HeaderProps, HeaderState> {
-  constructor(props: HeaderProps) {
+class HeaderBase extends Component<HeaderProps & SystemConnectedProps, HeaderState> {
+  constructor(props: HeaderProps & SystemConnectedProps) {
     super(props)
-    this.state = {
-      isDark: document.documentElement.classList.contains('dark')
-    }
+    this.state = {}
   }
 
   toggleTheme = () => {
-    const { isDark } = this.state
-    const newIsDark = !isDark
-    
-    if (newIsDark) {
-      document.documentElement.classList.add('dark')
-      localStorage.setItem('theme', 'dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-      localStorage.setItem('theme', 'light')
-    }
-    
-    this.setState({ isDark: newIsDark })
-  }
-
-  componentDidMount() {
-    // Check saved theme or system preference
-    const savedTheme = localStorage.getItem('theme')
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-    const shouldBeDark = savedTheme === 'dark' || (!savedTheme && systemDark)
-    
-    if (shouldBeDark) {
-      document.documentElement.classList.add('dark')
-      this.setState({ isDark: true })
-    }
+    const { theme, dispatch } = this.props
+    const newTheme = theme === 'dark' ? 'light' : 'dark'
+    dispatch({ type: SystemActionTypes.SET_THEME, payload: { theme: newTheme } })
   }
 
   render() {
-    const { onRefresh } = this.props
-    const { isDark } = this.state
+    const { theme } = this.props
+    const isDark = theme === 'dark'
 
     return (
       <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors">
@@ -74,15 +51,9 @@ export class Header extends Component<HeaderProps, HeaderState> {
                 {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
               
-              <Button
-                variant="primary"
-                size="md"
-                onClick={onRefresh}
-                className="!flex !items-center !space-x-2"
-              >
-                <RefreshCw className="h-4 w-4" />
-                <span>Refresh</span>
-              </Button>
+              <div className="relative">
+                <StatusIndicators />
+              </div>
             </div>
           </div>
         </div>
@@ -90,3 +61,5 @@ export class Header extends Component<HeaderProps, HeaderState> {
     )
   }
 }
+
+export const Header = withSystemRedux(HeaderBase)
