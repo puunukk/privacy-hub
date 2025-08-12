@@ -50,20 +50,20 @@ export function withContainerRedux<P extends ContainerReduxProps>(
 ): ComponentType<Omit<P, keyof ContainerReduxProps>> {
   
   const mapStateToProps = (state: RootState) => ({
-    containers: state.containers.containers,
-    dockerInfo: state.containers.dockerInfo,
-    isContainersLoading: state.containers.isLoading,
-    containerError: state.containers.error,
-    actionLoadingContainerId: state.containers.actionLoadingContainerId,
+    containers: state?.containers?.containers || [],
+    dockerInfo: state?.containers?.dockerInfo || null,
+    isContainersLoading: state?.containers?.isLoading || false,
+    containerError: state?.containers?.error || null,
+    actionLoadingContainerId: state?.containers?.actionLoadingContainerId || null,
     containerStatus: {
-      isConnected: state.containers.isConnected,
-      isPolling: state.containers.isPolling,
-      pollInterval: state.containers.pollInterval,
-      nextPollTime: state.containers.nextPollTime,
-      lastUpdate: state.containers.lastUpdateTime ? new Date(state.containers.lastUpdateTime) : null,
-      totalRequests: state.containers.totalRequests,
-      failedRequests: state.containers.failedRequests,
-      errorMessage: state.containers.error,
+      isConnected: state?.containers?.isConnected || false,
+      isPolling: state?.containers?.isPolling || false,
+      pollInterval: state?.containers?.pollInterval || 10000,
+      nextPollTime: state?.containers?.nextPollTime || null,
+      lastUpdate: state?.containers?.lastUpdateTime ? new Date(state.containers.lastUpdateTime) : null,
+      totalRequests: state?.containers?.totalRequests || 0,
+      failedRequests: state?.containers?.failedRequests || 0,
+      errorMessage: state?.containers?.error || null,
     },
   })
 
@@ -79,11 +79,11 @@ export function withSystemRedux<P extends SystemReduxProps>(
 ): ComponentType<Omit<P, keyof SystemReduxProps>> {
   
   const mapStateToProps = (state: RootState) => ({
-    isInitialized: state.system.isInitialized,
-    isLoading: state.system.isLoading,
-    theme: state.system.theme,
-    notifications: state.system.notifications,
-    globalError: state.system.globalError,
+    isInitialized: state?.system?.isInitialized || false,
+    isLoading: state?.system?.isLoading || false,
+    theme: state?.system?.theme || 'light',
+    notifications: state?.system?.notifications || [],
+    globalError: state?.system?.globalError || null,
   })
 
   const mapDispatchToProps = (dispatch: Dispatch) => ({ dispatch })
@@ -97,9 +97,9 @@ export function withNetworkRedux<P extends NetworkReduxProps>(
 ): ComponentType<Omit<P, keyof NetworkReduxProps>> {
   
   const mapStateToProps = (state: RootState) => ({
-    networkInfo: state.network.networkInfo,
-    isNetworkLoading: state.network.isLoading,
-    networkError: state.network.error,
+    networkInfo: state?.network?.networkInfo || null,
+    isNetworkLoading: state?.network?.isLoading || false,
+    networkError: state?.network?.error || null,
   })
 
   const mapDispatchToProps = (dispatch: Dispatch) => ({ dispatch })

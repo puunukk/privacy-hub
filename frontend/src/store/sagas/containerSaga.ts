@@ -14,7 +14,7 @@ import {
 } from '../slices/containerSlice'
 import { showNotification } from '../slices/systemSlice'
 import type { DockerContainer, DockerInfo, ContainerAction } from '../../types/docker'
-import type { RootState } from '@/store/store'
+import type { RootState } from '../store'
 
 // API Functions
 async function fetchContainersAPI(): Promise<DockerContainer[]> {

@@ -6,6 +6,7 @@ import { ErrorAlert } from './components/ErrorAlert'
 import { SystemInfo } from './components/SystemInfo'
 import { ContainersTable } from './components/ContainersTable'
 import { NotificationManager } from './components/NotificationManager'
+import { DebugInfo } from './components/DebugInfo'
 import { store } from './store/store'
 import { connect } from 'react-redux'
 import type { RootState } from './store/store'
@@ -65,6 +66,7 @@ class AppContentBase extends Component<AppContentProps, AppContentState> {
         </main>
 
         <NotificationManager />
+        <DebugInfo />
       </div>
     )
   }
@@ -73,13 +75,13 @@ class AppContentBase extends Component<AppContentProps, AppContentState> {
 // Connect AppContent to Redux
 const AppContent = connect(
   (state: RootState) => ({
-    isInitialized: state.system.isInitialized,
-    isLoading: state.system.isLoading,
-    globalError: state.system.globalError,
-    networkInfo: state.network.networkInfo,
-    networkError: state.network.error,
-    dockerInfo: state.containers.dockerInfo,
-    containerError: state.containers.error,
+    isInitialized: state?.system?.isInitialized || false,
+    isLoading: state?.system?.isLoading || false,
+    globalError: state?.system?.globalError || null,
+    networkInfo: state?.network?.networkInfo || null,
+    networkError: state?.network?.error || null,
+    dockerInfo: state?.containers?.dockerInfo || null,
+    containerError: state?.containers?.error || null,
   }),
   (dispatch: Dispatch) => ({ dispatch })
 )(AppContentBase)

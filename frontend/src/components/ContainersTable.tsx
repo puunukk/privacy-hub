@@ -16,8 +16,9 @@ class ContainersTableBase extends Component<ContainersTableProps, ContainersTabl
 
   render() {
     const { containers } = this.props
-    const runningCount = containers.filter(c => c.State === 'running').length
-    const totalCount = containers.length
+    const safeContainers = containers || []
+    const runningCount = safeContainers.filter(c => c.State === 'running').length
+    const totalCount = safeContainers.length
     
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow transition-colors">
@@ -58,7 +59,7 @@ class ContainersTableBase extends Component<ContainersTableProps, ContainersTabl
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {containers.map((container) => (
+              {safeContainers.map((container) => (
                 <ContainerRow
                   key={container.Id}
                   container={container}
@@ -68,7 +69,7 @@ class ContainersTableBase extends Component<ContainersTableProps, ContainersTabl
           </table>
         </div>
         
-        {containers.length === 0 && (
+        {safeContainers.length === 0 && (
           <div className="text-center py-12">
             <Server className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
             <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No containers found</h3>
