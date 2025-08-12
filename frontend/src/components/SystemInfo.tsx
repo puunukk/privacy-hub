@@ -39,7 +39,7 @@ export class SystemInfo extends Component<SystemInfoProps, SystemInfoState> {
   // Detect if we're in development or production  
   const isDevelopment = window.location.port !== '' && window.location.port !== '80' && window.location.port !== '443'
   // In production, nginx handles all routing, so use relative paths
-  const baseUrl = isDevelopment ? `http://localhost:${window.location.port}` : ''
+  const baseUrl = isDevelopment ? `${window.location.protocol}//localhost:${window.location.port}` : ''
 
     const quickLinks: Array<{
       name: string
@@ -62,7 +62,7 @@ export class SystemInfo extends Component<SystemInfoProps, SystemInfoState> {
       },
       {
         name: 'System Dashboard',
-        url: isDevelopment ? `http://localhost:${window.location.port}/` : '/dashboard/',
+        url: isDevelopment ? `${window.location.protocol}//localhost:${window.location.port}/` : '/dashboard/',
         icon: <Server className="w-4 h-4" />,
         color: 'text-green-600 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-900/20 dark:border-green-800'
       },

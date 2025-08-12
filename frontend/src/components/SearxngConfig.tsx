@@ -1,6 +1,28 @@
 import { Component } from 'react'
 import { Download, RotateCcw } from 'lucide-react'
 
+// Generate a cryptographically secure random string for secret keys
+function generateRandomString(): string {
+  // Try to use crypto.randomUUID if available
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    try {
+      return crypto.randomUUID()
+    } catch (e) {
+      // Fall back to alternative method if crypto.randomUUID fails
+    }
+  }
+  
+  // Fallback method using crypto.getRandomValues if available
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const array = new Uint8Array(16)
+    crypto.getRandomValues(array)
+    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('')
+  }
+  
+  // Final fallback using Math.random (less secure but functional)
+  return Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2)
+}
+
 interface SearxngSettings {
   general: {
     instance_name: string
@@ -51,7 +73,7 @@ const defaultSettings: SearxngSettings = {
   server: {
     port: 8080,
     bind_address: "0.0.0.0",
-    secret_key: crypto.randomUUID(),
+    secret_key: generateRandomString(),
     base_url: "",
     image_proxy: true
   },
