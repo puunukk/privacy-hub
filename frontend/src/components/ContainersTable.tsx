@@ -2,14 +2,14 @@ import { Component } from 'react'
 import { Server } from 'lucide-react'
 import { ContainerRow } from './ContainerRow'
 import { withContainerRedux } from '../store/hoc/withRedux'
-import type { ContainerConnectedProps } from '../store/hoc/withRedux'
+import type { ContainerReduxProps } from '../store/hoc/withRedux'
 
-interface ContainersTableProps {}
+interface ContainersTableProps extends ContainerReduxProps {}
 
 interface ContainersTableState {}
 
-class ContainersTableBase extends Component<ContainersTableProps & ContainerConnectedProps, ContainersTableState> {
-  constructor(props: ContainersTableProps & ContainerConnectedProps) {
+class ContainersTableBase extends Component<ContainersTableProps, ContainersTableState> {
+  constructor(props: ContainersTableProps) {
     super(props)
     this.state = {}
   }

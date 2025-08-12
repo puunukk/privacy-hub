@@ -1,20 +1,20 @@
 import { Component } from 'react'
 import { RefreshCw, Clock, AlertCircle, Wifi, WifiOff, Info, Server } from 'lucide-react'
 import { withContainerRedux } from '../store/hoc/withRedux'
-import type { ContainerConnectedProps } from '../store/hoc/withRedux'
+import type { ContainerReduxProps } from '../store/hoc/withRedux'
 import { ContainerActionTypes } from '../store/actions/types'
 
-interface StatusIndicatorsProps {}
+interface StatusIndicatorsProps extends ContainerReduxProps {}
 
 interface StatusIndicatorsState {
   showDetails: boolean
   timeUntilNext: number
 }
 
-class StatusIndicatorsBase extends Component<StatusIndicatorsProps & ContainerConnectedProps, StatusIndicatorsState> {
+class StatusIndicatorsBase extends Component<StatusIndicatorsProps, StatusIndicatorsState> {
   private countdownInterval: ReturnType<typeof setInterval> | null = null
 
-  constructor(props: StatusIndicatorsProps & ContainerConnectedProps) {
+  constructor(props: StatusIndicatorsProps) {
     super(props)
     this.state = {
       showDetails: false,
@@ -30,7 +30,7 @@ class StatusIndicatorsBase extends Component<StatusIndicatorsProps & ContainerCo
     this.stopCountdown()
   }
 
-  componentDidUpdate(prevProps: StatusIndicatorsProps & ContainerConnectedProps) {
+  componentDidUpdate(prevProps: StatusIndicatorsProps) {
     if (prevProps.containerStatus.nextPollTime !== this.props.containerStatus.nextPollTime) {
       this.startCountdown()
     }

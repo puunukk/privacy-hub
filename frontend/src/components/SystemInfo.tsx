@@ -90,7 +90,7 @@ export class SystemInfo extends Component<SystemInfoProps, SystemInfoState> {
             <div className="animate-pulse text-gray-500 dark:text-gray-400">Loading network information...</div>
           </div>
         ) : (
-          <div className="grid grid-cols-4 md:grid-cols-2 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-4 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
             
             {/* System Information */}
             <div className="space-y-4">

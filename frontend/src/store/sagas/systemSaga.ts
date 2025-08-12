@@ -1,4 +1,4 @@
-import { call, put, delay, fork, takeEvery, select } from 'redux-saga/effects'
+import { put, delay, fork, takeEvery, select } from 'redux-saga/effects'
 import { PayloadAction } from '@reduxjs/toolkit'
 import { SystemActionTypes, ContainerActionTypes, NetworkActionTypes } from '../actions/types'
 import {

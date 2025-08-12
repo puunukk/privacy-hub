@@ -80,7 +80,7 @@ const containerSlice = createSlice({
     },
 
     // Fetch Docker Info
-    fetchDockerInfoRequest: (state) => {
+    fetchDockerInfoRequest: () => {
       // Docker info requests are usually bundled with container requests
       // so we don't set loading state here to avoid conflicts
     },
@@ -167,6 +167,11 @@ const containerSlice = createSlice({
       }
     },
 
+    // Polling tick
+    containerPollTick: () => {
+      // This is just a trigger action for saga, no state changes needed
+    },
+
     // Clear Errors
     clearError: (state) => {
       state.error = null
@@ -189,6 +194,7 @@ export const {
   executeContainerActionFailure,
   setConnectionStatus,
   updatePollingStatus,
+  containerPollTick,
   clearError,
   resetContainerState,
 } = containerSlice.actions

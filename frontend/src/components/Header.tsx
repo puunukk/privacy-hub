@@ -3,15 +3,15 @@ import { Server, Sun, Moon } from 'lucide-react'
 import { Button } from './ui/Button'
 import { StatusIndicators } from './StatusIndicators'
 import { withSystemRedux } from '../store/hoc/withRedux'
-import type { SystemConnectedProps } from '../store/hoc/withRedux'
+import type { SystemReduxProps } from '../store/hoc/withRedux'
 import { SystemActionTypes } from '../store/actions/types'
 
-interface HeaderProps {}
+interface HeaderProps extends SystemReduxProps {}
 
 interface HeaderState {}
 
-class HeaderBase extends Component<HeaderProps & SystemConnectedProps, HeaderState> {
-  constructor(props: HeaderProps & SystemConnectedProps) {
+class HeaderBase extends Component<HeaderProps, HeaderState> {
+  constructor(props: HeaderProps) {
     super(props)
     this.state = {}
   }

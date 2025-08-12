@@ -1,39 +1,15 @@
-import { Component, ComponentType } from 'react'
-import { connect, ConnectedProps } from 'react-redux'
+import { ComponentType } from 'react'
+import { connect } from 'react-redux'
 import { Dispatch } from '@reduxjs/toolkit'
 import type { RootState } from '../store'
+import type { DockerContainer, DockerInfo } from '../../types/docker'
+import type { RealNetworkInfo } from '../../utils/network'
+import type { Notification } from '../slices/systemSlice'
 
-// Generic HOC for connecting components to Redux
-export interface WithReduxProps {
-  dispatch: Dispatch
-}
-
-// Create a connector that provides dispatch and full state access
-const connector = connect(
-  (state: RootState) => ({ reduxState: state }),
-  (dispatch: Dispatch) => ({ dispatch })
-)
-
-export type ReduxConnectedProps = ConnectedProps<typeof connector>
-
-// HOC that provides Redux connection
-export function withRedux<P extends object>(
-  WrappedComponent: ComponentType<P & ReduxConnectedProps>
-): ComponentType<Omit<P, keyof ReduxConnectedProps>> {
-  
-  class WithReduxComponent extends Component<Omit<P, keyof ReduxConnectedProps> & ReduxConnectedProps> {
-    render() {
-      return <WrappedComponent {...(this.props as P & ReduxConnectedProps)} />
-    }
-  }
-
-  return connector(WithReduxComponent) as ComponentType<Omit<P, keyof ReduxConnectedProps>>
-}
-
-// Specialized HOC for container-related components
-export interface WithContainerReduxProps extends WithReduxProps {
-  containers: RootState['containers']['containers']
-  dockerInfo: RootState['containers']['dockerInfo']
+// Container Redux Props
+export interface ContainerReduxProps {
+  containers: DockerContainer[]
+  dockerInfo: DockerInfo | null
   isContainersLoading: boolean
   containerError: string | null
   actionLoadingContainerId: string | null
@@ -47,10 +23,33 @@ export interface WithContainerReduxProps extends WithReduxProps {
     failedRequests: number
     errorMessage: string | null
   }
+  dispatch: Dispatch
 }
 
-const containerConnector = connect(
-  (state: RootState) => ({
+// System Redux Props
+export interface SystemReduxProps {
+  isInitialized: boolean
+  isLoading: boolean
+  theme: 'light' | 'dark'
+  notifications: Notification[]
+  globalError: string | null
+  dispatch: Dispatch
+}
+
+// Network Redux Props
+export interface NetworkReduxProps {
+  networkInfo: RealNetworkInfo | null
+  isNetworkLoading: boolean
+  networkError: string | null
+  dispatch: Dispatch
+}
+
+// Container HOC - Simplified approach
+export function withContainerRedux<P extends ContainerReduxProps>(
+  WrappedComponent: ComponentType<P>
+): ComponentType<Omit<P, keyof ContainerReduxProps>> {
+  
+  const mapStateToProps = (state: RootState) => ({
     containers: state.containers.containers,
     dockerInfo: state.containers.dockerInfo,
     isContainersLoading: state.containers.isLoading,
@@ -66,90 +65,44 @@ const containerConnector = connect(
       failedRequests: state.containers.failedRequests,
       errorMessage: state.containers.error,
     },
-    reduxState: state
-  }),
-  (dispatch: Dispatch) => ({ dispatch })
-)
+  })
 
-export type ContainerConnectedProps = ConnectedProps<typeof containerConnector>
+  const mapDispatchToProps = (dispatch: Dispatch) => ({ dispatch })
 
-export function withContainerRedux<P extends object>(
-  WrappedComponent: ComponentType<P & ContainerConnectedProps>
-): ComponentType<Omit<P, keyof ContainerConnectedProps>> {
+  // Use type assertion to bypass complex connect typing
+  return connect(mapStateToProps, mapDispatchToProps)(WrappedComponent as any) as any
+}
+
+// System HOC
+export function withSystemRedux<P extends SystemReduxProps>(
+  WrappedComponent: ComponentType<P>
+): ComponentType<Omit<P, keyof SystemReduxProps>> {
   
-  class WithContainerReduxComponent extends Component<Omit<P, keyof ContainerConnectedProps> & ContainerConnectedProps> {
-    render() {
-      return <WrappedComponent {...(this.props as P & ContainerConnectedProps)} />
-    }
-  }
-
-  return containerConnector(WithContainerReduxComponent) as ComponentType<Omit<P, keyof ContainerConnectedProps>>
-}
-
-// System-related HOC
-export interface WithSystemReduxProps extends WithReduxProps {
-  isInitialized: boolean
-  isLoading: boolean
-  theme: 'light' | 'dark'
-  notifications: RootState['system']['notifications']
-  globalError: string | null
-}
-
-const systemConnector = connect(
-  (state: RootState) => ({
+  const mapStateToProps = (state: RootState) => ({
     isInitialized: state.system.isInitialized,
     isLoading: state.system.isLoading,
     theme: state.system.theme,
     notifications: state.system.notifications,
     globalError: state.system.globalError,
-    reduxState: state
-  }),
-  (dispatch: Dispatch) => ({ dispatch })
-)
+  })
 
-export type SystemConnectedProps = ConnectedProps<typeof systemConnector>
+  const mapDispatchToProps = (dispatch: Dispatch) => ({ dispatch })
 
-export function withSystemRedux<P extends object>(
-  WrappedComponent: ComponentType<P & SystemConnectedProps>
-): ComponentType<Omit<P, keyof SystemConnectedProps>> {
+  return connect(mapStateToProps, mapDispatchToProps)(WrappedComponent as any) as any
+}
+
+// Network HOC
+export function withNetworkRedux<P extends NetworkReduxProps>(
+  WrappedComponent: ComponentType<P>
+): ComponentType<Omit<P, keyof NetworkReduxProps>> {
   
-  class WithSystemReduxComponent extends Component<Omit<P, keyof SystemConnectedProps> & SystemConnectedProps> {
-    render() {
-      return <WrappedComponent {...(this.props as P & SystemConnectedProps)} />
-    }
-  }
-
-  return systemConnector(WithSystemReduxComponent) as ComponentType<Omit<P, keyof SystemConnectedProps>>
-}
-
-// Network-related HOC
-export interface WithNetworkReduxProps extends WithReduxProps {
-  networkInfo: RootState['network']['networkInfo']
-  isNetworkLoading: boolean
-  networkError: string | null
-}
-
-const networkConnector = connect(
-  (state: RootState) => ({
+  const mapStateToProps = (state: RootState) => ({
     networkInfo: state.network.networkInfo,
     isNetworkLoading: state.network.isLoading,
     networkError: state.network.error,
-    reduxState: state
-  }),
-  (dispatch: Dispatch) => ({ dispatch })
-)
+  })
 
-export type NetworkConnectedProps = ConnectedProps<typeof networkConnector>
+  const mapDispatchToProps = (dispatch: Dispatch) => ({ dispatch })
 
-export function withNetworkRedux<P extends object>(
-  WrappedComponent: ComponentType<P & NetworkConnectedProps>
-): ComponentType<Omit<P, keyof NetworkConnectedProps>> {
-  
-  class WithNetworkReduxComponent extends Component<Omit<P, keyof NetworkConnectedProps> & NetworkConnectedProps> {
-    render() {
-      return <WrappedComponent {...(this.props as P & NetworkConnectedProps)} />
-    }
-  }
-
-  return networkConnector(WithNetworkReduxComponent) as ComponentType<Omit<P, keyof NetworkConnectedProps>>
+  return connect(mapStateToProps, mapDispatchToProps)(WrappedComponent as any) as any
 }

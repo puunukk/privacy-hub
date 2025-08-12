@@ -1,15 +1,15 @@
 import { Component } from 'react'
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react'
 import { withSystemRedux } from '../store/hoc/withRedux'
-import type { SystemConnectedProps } from '../store/hoc/withRedux'
+import type { SystemReduxProps } from '../store/hoc/withRedux'
 import { hideNotification } from '../store/slices/systemSlice'
 
-interface NotificationManagerProps {}
+interface NotificationManagerProps extends SystemReduxProps {}
 
 interface NotificationManagerState {}
 
-class NotificationManagerBase extends Component<NotificationManagerProps & SystemConnectedProps, NotificationManagerState> {
-  constructor(props: NotificationManagerProps & SystemConnectedProps) {
+class NotificationManagerBase extends Component<NotificationManagerProps, NotificationManagerState> {
+  constructor(props: NotificationManagerProps) {
     super(props)
     this.state = {}
   }

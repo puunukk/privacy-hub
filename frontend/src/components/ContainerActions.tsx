@@ -1,11 +1,11 @@
 import { Component } from 'react'
 import { Play, Square, RotateCcw, Trash2, RefreshCw, Shield } from 'lucide-react'
 import { withContainerRedux } from '../store/hoc/withRedux'
-import type { ContainerConnectedProps } from '../store/hoc/withRedux'
+import type { ContainerReduxProps } from '../store/hoc/withRedux'
 import { ContainerActionTypes } from '../store/actions/types'
 import type { ContainerAction } from '../types/docker'
 
-interface ContainerActionsProps {
+interface ContainerActionsProps extends ContainerReduxProps {
   containerId: string
   containerName: string
   containerImage: string
@@ -14,8 +14,8 @@ interface ContainerActionsProps {
 
 interface ContainerActionsState {}
 
-class ContainerActionsBase extends Component<ContainerActionsProps & ContainerConnectedProps, ContainerActionsState> {
-  constructor(props: ContainerActionsProps & ContainerConnectedProps) {
+class ContainerActionsBase extends Component<ContainerActionsProps, ContainerActionsState> {
+  constructor(props: ContainerActionsProps) {
     super(props)
     this.state = {}
   }

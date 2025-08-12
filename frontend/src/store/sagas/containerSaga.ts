@@ -6,7 +6,6 @@ import {
   fetchContainersSuccess,
   fetchContainersFailure,
   fetchDockerInfoSuccess,
-  fetchDockerInfoFailure,
   executeContainerActionSuccess,
   executeContainerActionFailure,
   setConnectionStatus,
@@ -200,7 +199,7 @@ function* containerPollingTask(pollInterval: number) {
       yield put({ type: ContainerActionTypes.FETCH_CONTAINERS_REQUEST })
     }
   } finally {
-    yield put(updatePollingStatus({ isPolling: false, nextPollTime: null }))
+    yield put(updatePollingStatus({ isPolling: false, nextPollTime: undefined }))
   }
 }
 
