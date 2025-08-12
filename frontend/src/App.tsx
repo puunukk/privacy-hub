@@ -1,7 +1,6 @@
 import { Component } from 'react'
 import { Provider } from 'react-redux'
 import { Header } from './components/Header'
-import { LoadingSpinner } from './components/LoadingSpinner'
 import { ErrorAlert } from './components/ErrorAlert'
 import { SystemInfo } from './components/SystemInfo'
 import { ContainersTable } from './components/ContainersTable'
@@ -14,8 +13,6 @@ import { SystemActionTypes } from './store/actions/types'
 import type { Dispatch } from '@reduxjs/toolkit'
 
 interface AppContentProps {
-  isInitialized: boolean
-  isLoading: boolean
   globalError: string | null
   networkInfo: RootState['network']['networkInfo']
   networkError: string | null
@@ -38,18 +35,12 @@ class AppContentBase extends Component<AppContentProps, AppContentState> {
 
   render() {
     const { 
-      isInitialized, 
-      isLoading, 
       globalError,
       networkInfo, 
       networkError,
       dockerInfo, 
       containerError 
     } = this.props
-
-    if (!isInitialized || isLoading) {
-      return <LoadingSpinner />
-    }
 
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
@@ -75,8 +66,6 @@ class AppContentBase extends Component<AppContentProps, AppContentState> {
 // Connect AppContent to Redux
 const AppContent = connect(
   (state: RootState) => ({
-    isInitialized: state?.system?.isInitialized || false,
-    isLoading: state?.system?.isLoading || false,
     globalError: state?.system?.globalError || null,
     networkInfo: state?.network?.networkInfo || null,
     networkError: state?.network?.error || null,

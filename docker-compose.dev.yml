@@ -1,0 +1,125 @@
+services:
+  # Pi-hole - INTERNAL ONLY (no exposed ports)
+  pihole:
+    build: ./pihole
+    container_name: pihole
+    hostname: pihole
+    # NO PORTS EXPOSED TO HOST - only internal
+    environment:
+      TZ: ${TZ:-Europe/Tallinn}
+      WEBPASSWORD: ${PIHOLE_PASSWORD:-secure123}
+      FTLCONF_LOCAL_IPV4: ${SERVER_IP}
+      PIHOLE_DNS_: '1.1.1.1;1.0.0.1'
+      VIRTUAL_HOST: ${HOSTNAME:-otsi}.${LOCAL_DOMAIN:-local}
+    volumes:
+      - './pihole/data:/etc/pihole'
+      - './pihole/dnsmasq:/etc/dnsmasq.d'
+    tmpfs:
+      - /var/log
+      - /tmp
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    networks:
+      - internal
+
+  # SearXNG - INTERNAL ONLY (no exposed ports)  
+  searxng:
+    build: ./searxng
+    container_name: searxng
+    hostname: searxng
+    # NO PORTS EXPOSED TO HOST - only internal
+    environment:
+      - SEARXNG_BASE_URL=https://${SERVER_IP}/
+      - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY:-auto-generated}
+      - SEARXNG_DEFAULT_THEME=${SEARXNG_DEFAULT_THEME:-simple}
+      - SEARXNG_SAFE_SEARCH=${SEARXNG_SAFE_SEARCH:-1}
+      - SEARXNG_DEFAULT_LANG=${SEARXNG_DEFAULT_LANG:-en}
+    volumes:
+      - './searxng/data:/etc/searxng'
+    tmpfs:
+      - /var/log
+      - /tmp
+      - /var/cache
+    restart: unless-stopped
+    networks:
+      - internal
+
+  # Docker API Proxy - secure Docker socket access
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: docker-proxy
+    hostname: docker-proxy
+    # NO PORTS EXPOSED - internal only
+    environment:
+      # Minimal permissions for security
+      CONTAINERS: 1
+      IMAGES: 1
+      INFO: 1
+      NETWORKS: 0
+      VOLUMES: 0
+      SERVICES: 0
+      TASKS: 0
+      SECRETS: 0
+      POST: 1  # Allow start/stop/restart only
+      LOG_LEVEL: info
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    networks:
+      - internal
+
+  # Frontend development - builds and serves files via volume
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: frontend
+    hostname: frontend
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true  # For file watching on volume mounts
+      - DOCKER_ENV=true
+    volumes:
+      # Source code mounted for hot reload
+      - './frontend:/app:cached'
+      - '/app/node_modules'
+      # CRITICAL: Share built files with nginx via volume
+      - 'frontend_dist:/app/dist'
+      - 'frontend_dist:/usr/share/nginx/html'  # Same volume nginx will read
+    command: sh -c "npm install && npm run build:watch"  # Build and watch for changes
+    restart: unless-stopped
+    networks:
+      - internal
+
+  # NGINX - STANDALONE - serves static files from shared volume
+  nginx:
+    build: 
+      context: ./nginx
+      dockerfile: Dockerfile.prod  # Use PRODUCTION config that serves static files
+    container_name: nginx
+    hostname: nginx
+    ports:
+      # ONLY these ports exposed to network
+      - "53:53/tcp"      # DNS
+      - "53:53/udp"      # DNS  
+      - "80:80"          # HTTP
+      - "443:443"        # HTTPS
+    volumes:
+      - './nginx/ssl:/etc/nginx/ssl'
+      # CRITICAL: Same volume that frontend builds into
+      - 'frontend_dist:/usr/share/nginx/html:ro'  # Read static files
+    tmpfs:
+      - /var/log/nginx
+      - /tmp
+    restart: unless-stopped
+    # NO DEPENDS_ON - STANDALONE
+    networks:
+      - internal
+
+volumes:
+  frontend_dist:  # Shared volume for built frontend files
+
+networks:
+  internal:
+    driver: bridge

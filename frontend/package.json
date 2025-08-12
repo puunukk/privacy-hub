@@ -6,6 +6,7 @@
     "dev": "vite --host 0.0.0.0",
     "dev:port": "vite --host 0.0.0.0 --port",
     "build": "tsc && vite build",
+    "build:watch": "tsc && vite build --watch",
     "preview": "vite preview",
     "type-check": "tsc --noEmit"
   },

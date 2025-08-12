@@ -1,7 +1,6 @@
 import { Component } from 'react'
 import { Server, Sun, Moon } from 'lucide-react'
 import { Button } from './ui/Button'
-import { StatusIndicators } from './StatusIndicators'
 import { withSystemRedux } from '../store/hoc/withRedux'
 import type { SystemReduxProps } from '../store/hoc/withRedux'
 import { SystemActionTypes } from '../store/actions/types'
@@ -50,10 +49,6 @@ class HeaderBase extends Component<HeaderProps, HeaderState> {
               >
                 {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
-              
-              <div className="relative">
-                <StatusIndicators />
-              </div>
             </div>
           </div>
         </div>

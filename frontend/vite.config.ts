@@ -45,7 +45,7 @@ export default defineConfig({
     strictPort: false,  // Allow Vite to find another port if specified port is busy
     allowedHosts: 'all',  // Allow nginx to proxy from "frontend" hostname
     watch: {
-      usePolling: true  // For Windows volume mounts
+      usePolling: process.env.CHOKIDAR_USEPOLLING === 'true' || process.env.DOCKER_ENV === 'true'  // For Docker volume mounts and file watching
     },
     // Proxy Docker API for container management (needed for dashboard functionality)
     proxy: {
