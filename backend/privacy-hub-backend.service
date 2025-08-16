@@ -1,0 +1,30 @@
+[Unit]
+Description=Privacy Hub Backend Service
+Documentation=https://github.com/your-repo/privacy-hub
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=privacy-hub
+Group=privacy-hub
+WorkingDirectory=/opt/privacy-hub
+ExecStart=/opt/privacy-hub/privacy-hub-backend
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=privacy-hub-backend
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/privacy-hub /var/log
+
+# Environment variables
+Environment=GOMAXPROCS=1
+
+[Install]
+WantedBy=multi-user.target
