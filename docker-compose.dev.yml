@@ -99,18 +99,18 @@ services:
     build: ./backend
     container_name: backend
     hostname: backend
-    network_mode: host
     privileged: true
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /etc:/host/etc:ro
       #- /var/run/docker.sock:/var/run/docker.sock
-    restart: unless-stopped
+    network_mode: host
     # networks:
     #   - internal
+    restart: unless-stopped
 
-    # NGINX - STANDALONE - serves static files from shared volume
+  # NGINX - STANDALONE - serves static files from shared volume
   nginx:
     # build:
     #   context: . # Root context to access both nginx/ and frontend/ directories
