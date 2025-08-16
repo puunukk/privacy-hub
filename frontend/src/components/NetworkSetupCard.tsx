@@ -1,11 +1,24 @@
 import { PureComponent, type ReactNode } from 'react'
-import { Network, AlertCircle, CheckCircle, Router, ChevronDown, ChevronRight, Globe, Shield } from 'lucide-react'
-import type { RealNetworkInfo } from '../utils/network'
-import { cn } from '@/utils/cn'
+import { connect, ConnectedProps } from 'react-redux'
+import { Network, AlertCircle, CheckCircle, Router, ChevronDown, ChevronRight, Globe } from 'lucide-react'
 
-interface NetworkSetupCardProps {
-  networkInfo?: RealNetworkInfo | null
-}
+import { cn } from '@/utils/cn'
+import type { RootState } from '@/store'
+import { Typography } from '@/components/ui/Typography'
+
+const mapStateToProps = (state: RootState) => ({
+  networkInfo: state.systemInfo.data ? {
+    hostIP: state.systemInfo.data.ip || 'unknown',
+    hostname: state.systemInfo.data.hostname || 'privacy-hub',
+    gateway: state.systemInfo.data.gateway || '192.168.1.1',
+    subnet: '192.168.1.0/24',
+    isDhcpClient: true,
+    dnsServers: [state.systemInfo.data.dns || '8.8.8.8', '1.1.1.1']
+  } : null,
+})
+
+const connector = connect(mapStateToProps)
+type NetworkSetupCardProps = ConnectedProps<typeof connector>
 
 interface NetworkSetupCardState {
   expandedSections: {
@@ -14,7 +27,7 @@ interface NetworkSetupCardState {
   }
 }
 
-export class NetworkSetupCard extends PureComponent<NetworkSetupCardProps, NetworkSetupCardState> {
+class NetworkSetupCard extends PureComponent<NetworkSetupCardProps, NetworkSetupCardState> {
   constructor(props: NetworkSetupCardProps) {
     super(props)
     this.state = {
@@ -38,8 +51,7 @@ export class NetworkSetupCard extends PureComponent<NetworkSetupCardProps, Netwo
     title: string,
     icon: ReactNode,
     section: keyof NetworkSetupCardState['expandedSections'],
-    status?: 'success' | 'warning' | 'error',
-    count?: number
+    status?: 'success' | 'warning' | 'error'
   ) => {
     const isExpanded = this.state.expandedSections[section]
 
@@ -65,11 +77,6 @@ export class NetworkSetupCard extends PureComponent<NetworkSetupCardProps, Netwo
           {icon}
           <h4 className="font-medium text-gray-900 dark:text-white">{title}</h4>
           {getStatusIcon()}
-          {count !== undefined && (
-            <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">
-              {count}
-            </span>
-          )}
         </div>
         {isExpanded ? (
           <ChevronDown className="w-4 h-4 text-gray-500" />
@@ -89,38 +96,51 @@ export class NetworkSetupCard extends PureComponent<NetworkSetupCardProps, Netwo
     const isDnsConfigured = networkInfo.dnsServers.includes(networkInfo.hostIP) || false
 
     return (
-      <div className="px-4 pb-4 space-y-3">
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500 dark:text-gray-400">Primary DNS:</span>
-          <span className="text-sm font-medium text-gray-900 dark:text-white">{networkInfo.dnsServers[0] || 'Not set'}</span>
-        </div>
-        {networkInfo.dnsServers[1] && (
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-500 dark:text-gray-400">Secondary DNS:</span>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">{networkInfo.dnsServers[1]}</span>
-          </div>
-        )}
-
-        <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
-          <div className="flex items-center space-x-2 mb-2">
+      <div className="px-4 pb-4">
+        {/* DNS Status Card */}
+        <div className={cn(
+          "p-4 rounded-lg mb-4",
+          isDnsConfigured
+            ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+            : "bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800"
+        )}>
+          <div className="flex items-center space-x-3 mb-3">
             {isDnsConfigured ? (
-              <CheckCircle className="w-4 h-4 text-green-500" />
+              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
             ) : (
-              <AlertCircle className="w-4 h-4 text-yellow-500" />
+              <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
             )}
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Pi-hole DNS Status
-            </span>
+            <Typography.Text size="sm" weight="medium" color="primary">
+              {isDnsConfigured ? 'Pi-hole DNS Active' : 'Pi-hole DNS Not Configured'}
+            </Typography.Text>
           </div>
           {isDnsConfigured ? (
-            <p className="text-sm text-green-600 dark:text-green-400">✓ Pi-hole is configured as DNS server</p>
+            <p className="text-sm text-green-800 dark:text-green-200">
+              All devices on your network are using Pi-hole for ad-blocking and DNS filtering.
+            </p>
           ) : (
-            <div className="text-sm text-yellow-600 dark:text-yellow-400">
-              <p>⚠ Configure router to use Pi-hole DNS:</p>
-              <p className="font-mono mt-1">Primary DNS: {networkInfo.hostIP}</p>
-              <p className="font-mono">Secondary DNS: {networkInfo.gateway}</p>
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              Configure your router to use Pi-hole as the DNS server for network-wide ad-blocking.
+            </p>
+          )}
+        </div>
+
+        {/* DNS Configuration Details */}
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <Typography.Text size="sm" color="muted">Primary DNS:</Typography.Text>
+            <Typography.Text size="sm" weight="medium" color="primary">{networkInfo.dnsServers[0] || 'Not set'}</Typography.Text>
+          </div>
+          {networkInfo.dnsServers[1] && (
+            <div className="flex justify-between items-center">
+              <Typography.Text size="sm" color="muted">Secondary DNS:</Typography.Text>
+              <Typography.Text size="sm" weight="medium" color="primary">{networkInfo.dnsServers[1]}</Typography.Text>
             </div>
           )}
+          <div className="flex justify-between items-center">
+            <Typography.Text size="sm" color="muted">Pi-hole IP:</Typography.Text>
+            <Typography.Text size="sm" weight="medium" color="primary">{networkInfo.hostIP}</Typography.Text>
+          </div>
         </div>
       </div>
     )
@@ -209,7 +229,8 @@ export class NetworkSetupCard extends PureComponent<NetworkSetupCardProps, Netwo
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
             <Network className="w-5 h-5" />
-            <span>Network Configuration</span>
+            <Typography.Text size="lg" weight="semibold" color="primary">
+              Network Configuration</Typography.Text>
           </h3>
         </div>
 
@@ -240,3 +261,5 @@ export class NetworkSetupCard extends PureComponent<NetworkSetupCardProps, Netwo
     )
   }
 }
+
+export default connector(NetworkSetupCard)

@@ -15,23 +15,17 @@ export const formatLoadAverage = (loadAvg: string): string => {
 
     // Determine load status based on typical thresholds
     let status: string
-    let color: string
 
     if (currentLoad < 0.5) {
         status = 'Idle'
-        color = 'text-green-600'
     } else if (currentLoad < 1.0) {
         status = 'Low'
-        color = 'text-blue-600'
     } else if (currentLoad < 2.0) {
         status = 'Normal'
-        color = 'text-yellow-600'
     } else if (currentLoad < 4.0) {
         status = 'High'
-        color = 'text-orange-600'
     } else {
         status = 'Very High'
-        color = 'text-red-600'
     }
 
     return `${currentLoad.toFixed(2)} (${status})`
@@ -58,23 +52,30 @@ export const getLoadAverageColor = (loadAvg: string): string => {
 /**
  * Safely formats load average data regardless of input format
  * Handles string, array, number, or undefined/null values
+ * Returns the raw load average value with status interpretation
  */
 export const safeFormatLoadAverage = (loadAvg: any): string => {
     if (!loadAvg) return 'N/A'
 
+    let loadValue: number
+
     if (typeof loadAvg === 'string') {
-        return formatLoadAverage(loadAvg)
+        const values = loadAvg.split(' ').map(v => parseFloat(v)).filter(v => !isNaN(v))
+        loadValue = values[0] || 0
+    } else if (Array.isArray(loadAvg)) {
+        loadValue = parseFloat(loadAvg[0]) || 0
+    } else if (typeof loadAvg === 'number') {
+        loadValue = loadAvg
+    } else {
+        return 'N/A'
     }
 
-    if (Array.isArray(loadAvg)) {
-        return loadAvg.join(', ')
-    }
-
-    if (typeof loadAvg === 'number') {
-        return loadAvg.toFixed(2)
-    }
-
-    return String(loadAvg)
+    // Load average interpretation (not percentage)
+    if (loadValue < 0.5) return `${loadValue.toFixed(2)} (Idle)`
+    if (loadValue < 1.0) return `${loadValue.toFixed(2)} (Low)`
+    if (loadValue < 2.0) return `${loadValue.toFixed(2)} (Normal)`
+    if (loadValue < 4.0) return `${loadValue.toFixed(2)} (High)`
+    return `${loadValue.toFixed(2)} (Very High)`
 }
 
 /**

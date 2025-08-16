@@ -5,6 +5,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Typography } from '@/components/ui/Typography'
 import { cn } from '@/utils/cn'
 import { formatBytes } from '@/utils/formatBytes'
+import { calculateSystemStoragePercent, calculateSystemMemoryPercent } from '@/utils/calculateSystemMetrics'
 
 interface SystemResourcesProps {
     systemMetrics?: any
@@ -26,14 +27,6 @@ interface MetricValueProps {
 }
 
 export class SystemResources extends PureComponent<SystemResourcesProps> {
-    // Helper to extract value and unit from formatBytes utility
-    private parseFormattedBytes(bytes: number): { value: number; unit: string } {
-        const formatted = formatBytes(bytes)
-        const parts = formatted.split(' ')
-        const value = parseFloat(parts[0])
-        const unit = parts[1]
-        return { value, unit }
-    }
 
     private MetricValue = ({ label, value, unit, description }: MetricValueProps) => (
         <div
@@ -119,25 +112,7 @@ export class SystemResources extends PureComponent<SystemResourcesProps> {
             )
         }
 
-        // Memory values are in KB, convert to bytes then format
-        const memoryTotalBytes = systemMetrics.memory_total ? systemMetrics.memory_total * 1024 : 0
-        const memoryUsedBytes = systemMetrics.memory_used ? systemMetrics.memory_used * 1024 : 0
-        const memoryFreeBytes = systemMetrics.memory_free ? systemMetrics.memory_free * 1024 : 0
 
-        const { value: memoryTotalValue, unit: memoryTotalUnit } = this.parseFormattedBytes(memoryTotalBytes)
-        const { value: memoryUsedValue, unit: memoryUsedUnit } = this.parseFormattedBytes(memoryUsedBytes)
-        const { value: memoryFreeValue, unit: memoryFreeUnit } = this.parseFormattedBytes(memoryFreeBytes)
-        const memoryUsagePercent = memoryTotalBytes > 0 ? (memoryUsedBytes / memoryTotalBytes) * 100 : 0
-
-        // Storage values are in bytes, convert to appropriate unit
-        const storageTotal = systemMetrics.storage?.root_partition?.Total || 0
-        const storageUsed = systemMetrics.storage?.root_partition?.Used || 0
-        const storageFree = systemMetrics.storage?.root_partition?.Free || 0
-        const storageUsagePercent = storageTotal > 0 ? (storageUsed / storageTotal) * 100 : 0
-
-        const { value: storageTotalValue, unit: storageTotalUnit } = this.parseFormattedBytes(storageTotal)
-        const { value: storageUsedValue, unit: storageUsedUnit } = this.parseFormattedBytes(storageUsed)
-        const { value: storageFreeValue, unit: storageFreeUnit } = this.parseFormattedBytes(storageFree)
 
         return (
             <div className="space-y-6">
@@ -151,35 +126,35 @@ export class SystemResources extends PureComponent<SystemResourcesProps> {
                     <div className="space-y-4">
                         <ProgressBar
                             label="Memory Usage"
-                            used={memoryUsedValue}
-                            total={memoryTotalValue}
-                            unit={memoryTotalUnit as 'MB' | 'GB' | 'TB'}
+                            used={systemMetrics.memory_used}
+                            total={systemMetrics.memory_total}
+                            unit="KB"
                             color="blue"
                         />
 
                         <div className="grid grid-cols-3 gap-4">
                             <this.MetricValue
                                 label="Total"
-                                value={memoryTotalValue.toFixed(1)}
-                                unit={memoryTotalUnit}
+                                value={formatBytes(systemMetrics.memory_total * 1024)}
+                                unit=""
                                 description="Total physical memory installed in the system"
                             />
                             <this.MetricValue
                                 label="Used"
-                                value={memoryUsedValue.toFixed(1)}
-                                unit={memoryUsedUnit}
-                                description={`${memoryUsagePercent.toFixed(1)}% of total memory is currently in use`}
+                                value={formatBytes(systemMetrics.memory_used * 1024)}
+                                unit=""
+                                description={`${calculateSystemMemoryPercent(systemMetrics).toFixed(1)}% of total memory is currently in use`}
                             />
                             <this.MetricValue
                                 label="Available"
-                                value={memoryFreeValue.toFixed(1)}
-                                unit={memoryFreeUnit}
+                                value={formatBytes(systemMetrics.memory_free * 1024)}
+                                unit=""
                                 description="Memory available for new applications and processes"
                             />
                         </div>
 
                         {/* Memory info text - only show if there's memory data */}
-                        {memoryTotalBytes > 0 && (
+                        {systemMetrics.memory_total > 0 && (
                             <div className="text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded p-2">
                                 <Typography.Text size="xs" color="muted">
                                     Memory data is read from /proc/meminfo and updated in real-time.
@@ -200,29 +175,29 @@ export class SystemResources extends PureComponent<SystemResourcesProps> {
                     <div className="space-y-4">
                         <ProgressBar
                             label="Disk Usage"
-                            used={storageUsedValue}
-                            total={storageTotalValue}
-                            unit={storageTotalUnit as 'MB' | 'GB' | 'TB'}
+                            used={systemMetrics.storage?.root_partition?.used || 0}
+                            total={systemMetrics.storage?.root_partition?.total || 0}
+                            unit="B"
                             color="green"
                         />
 
                         <div className="grid grid-cols-3 gap-4">
                             <this.MetricValue
                                 label="Total"
-                                value={storageTotalValue.toFixed(1)}
-                                unit={storageTotalUnit}
+                                value={formatBytes(systemMetrics.storage?.root_partition?.total || 0)}
+                                unit=""
                                 description="Total disk space on the root partition"
                             />
                             <this.MetricValue
                                 label="Used"
-                                value={storageUsedValue.toFixed(1)}
-                                unit={storageUsedUnit}
-                                description={`${storageUsagePercent.toFixed(1)}% of disk space is currently used`}
+                                value={formatBytes(systemMetrics.storage?.root_partition?.used || 0)}
+                                unit=""
+                                description={`${calculateSystemStoragePercent(systemMetrics).toFixed(1)}% of disk space is currently used`}
                             />
                             <this.MetricValue
                                 label="Free"
-                                value={storageFreeValue.toFixed(1)}
-                                unit={storageFreeUnit}
+                                value={formatBytes(systemMetrics.storage?.root_partition?.free || 0)}
+                                unit=""
                                 description="Available disk space for new files and data"
                             />
                         </div>

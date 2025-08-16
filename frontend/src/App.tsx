@@ -4,9 +4,8 @@ import type { Dispatch } from '@reduxjs/toolkit'
 
 import { ErrorAlert } from './components/ErrorAlert'
 import { QuickAccess } from './components/QuickAccess'
-import { SystemInfoCard } from './components/SystemInfoCard'
-import { ResourcesCard } from './components/ResourcesCard'
-import { NetworkSetupCard } from './components/NetworkSetupCard'
+import SystemInfoCard from './components/SystemInfoCard'
+import NetworkSetupCard from './components/NetworkSetupCard'
 import { ContainersTable } from './components/ContainersTable'
 import type { RootState } from './store'
 import { cn } from './utils/cn'
@@ -83,7 +82,6 @@ class App extends Component<AppProps> {
       'px-4 sm:px-6 lg:px-8 py-8', // page padding
     )
 
-
     return (
       <div className={pageContainerCls}>
         <Header />
@@ -96,23 +94,14 @@ class App extends Component<AppProps> {
 
           <QuickAccess />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8 px-6">
-            <SystemInfoCard
-              dockerInfo={dockerInfo}
-              networkInfo={networkInfo}
-              systemInfo={this.props.systemInfo as any}
-              systemMetrics={this.props.systemMetrics as any}
-              temperatureCelsius={this.props.temperatureCelsius}
-              isTemperatureLoading={this.props.isTemperatureLoading}
-              temperatureError={this.props.temperatureError}
-            />
-            <ResourcesCard
-              dockerInfo={dockerInfo}
-              systemMetrics={this.props.systemMetrics as any}
-              temperatureCelsius={this.props.temperatureCelsius}
-            />
-            <div className="xl:col-span-1 md:col-span-2">
-              <NetworkSetupCard networkInfo={networkInfo} />
+          <div className="space-y-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <SystemInfoCard />
+              </div>
+              <div className="lg:col-span-1">
+                <NetworkSetupCard />
+              </div>
             </div>
           </div>
 

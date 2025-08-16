@@ -127,7 +127,7 @@ class Header extends Component<HeaderProps, HeaderState> {
                 {/* <Server className="h-8 w-8 text-blue-600 dark:text-blue-400" /> */}
                 <div>
                   <Typography.Title level={2} color="primary">
-                    Private Hubasdasasfd
+                    Private Hub
                   </Typography.Title>
                   <Typography.Text size="sm" color="muted">
                     Pi-hole & SearXNG Management

@@ -1,138 +1,128 @@
-import { PureComponent, type ReactNode } from 'react'
-import { Server, ChevronDown, ChevronRight, Cpu, Activity } from 'lucide-react'
-import type { DockerInfo } from '../types/docker'
-import type { RealNetworkInfo } from '../utils/network'
-import { safeFormatLoadAverage, safeGetLoadAverageColor } from '@/utils/formatLoadAverage'
+import { PureComponent } from 'react'
+import { connect, ConnectedProps } from 'react-redux'
+import { Server, Cpu, Activity, HardDrive, MemoryStick } from 'lucide-react'
+import { safeFormatLoadAverage } from '@/utils/formatLoadAverage'
+import { calculateSystemMemoryPercent, calculateSystemStoragePercent, getMemoryStatusColor, getStorageStatusColor, getLoadAverage } from '@/utils/calculateSystemMetrics'
+import { formatUptime } from '@/utils/formatUptime'
 import { cn } from '@/utils/cn'
+import { Typography } from '@/components/ui/Typography'
+import type { RootState } from '@/store'
 
-interface SystemInfoCardProps {
-  dockerInfo: DockerInfo | null
-  networkInfo?: RealNetworkInfo | null
-  systemInfo?: any
-  systemMetrics?: any
-  temperatureCelsius: number | null
-  isTemperatureLoading: boolean
-  temperatureError: string | null
-}
+const mapStateToProps = (state: RootState) => ({
+  dockerInfo: state.containers.dockerInfo,
+  systemInfo: state.systemInfo.data,
+  systemMetrics: state.metrics.data,
+  temperatureCelsius: state.metrics.data?.cpu_temp ?? null,
+  temperatureError: state.metrics.error,
+  isTemperatureLoading: state.metrics.status === 'LOADING',
+  networkInfo: state.systemInfo.data ? {
+    hostIP: state.systemInfo.data.ip || 'unknown',
+    hostname: state.systemInfo.data.hostname || 'privacy-hub',
+    gateway: state.systemInfo.data.gateway || '192.168.1.1',
+  } : null,
+})
 
-interface SystemInfoCardState {
-  expandedSections: {
-    basic: boolean
-    docker: boolean
-  }
-}
+const connector = connect(mapStateToProps)
+type SystemInfoCardProps = ConnectedProps<typeof connector>
 
-export class SystemInfoCard extends PureComponent<SystemInfoCardProps, SystemInfoCardState> {
-  constructor(props: SystemInfoCardProps) {
-    super(props)
-    this.state = {
-      expandedSections: {
-        basic: true,
-        docker: false
-      }
-    }
-  }
 
-  toggleSection = (section: keyof SystemInfoCardState['expandedSections']) => {
-    this.setState(prevState => ({
-      expandedSections: {
-        ...prevState.expandedSections,
-        [section]: !prevState.expandedSections[section]
-      }
-    }))
-  }
 
-  renderSectionHeader = (
-    title: string,
-    icon: ReactNode,
-    section: keyof SystemInfoCardState['expandedSections'],
-    count?: number
-  ) => {
-    const isExpanded = this.state.expandedSections[section]
+class SystemInfoCard extends PureComponent<SystemInfoCardProps> {
 
-    return (
-      <div
-        className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-        onClick={() => this.toggleSection(section)}
-      >
-        <div className="flex items-center space-x-3">
-          {icon}
-          <h4 className="font-medium text-gray-900 dark:text-white">{title}</h4>
-          {count !== undefined && (
-            <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">
-              {count}
-            </span>
-          )}
-        </div>
-        {isExpanded ? (
-          <ChevronDown className="w-4 h-4 text-gray-500" />
-        ) : (
-          <ChevronRight className="w-4 h-4 text-gray-500" />
-        )}
-      </div>
-    )
-  }
-
-  renderBasicInfo = () => {
+  renderSystemInfo = () => {
     const { networkInfo, systemInfo, systemMetrics, temperatureCelsius, isTemperatureLoading, temperatureError } = this.props
-    const isExpanded = this.state.expandedSections.basic
-
-    if (!isExpanded) return null
 
     return (
-      <div className="px-4 pb-4 space-y-3">
-        {/* Essential System Info */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div className="text-lg font-bold text-gray-900 dark:text-white">
+      <div>
+        {/* System Identity */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <Typography.Text size="lg" weight="bold" color="primary">
               {networkInfo?.hostname || systemInfo?.hostname || 'Unknown'}
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Hostname</div>
+            </Typography.Text>
+            <Typography.Text size="xs" color="muted" className="block">
+              Hostname
+            </Typography.Text>
           </div>
-          <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <div className="text-lg font-bold text-gray-900 dark:text-white">
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <Typography.Text size="lg" weight="bold" color="primary">
               {networkInfo?.hostIP || systemInfo?.ip || 'Unknown'}
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">IP Address</div>
+            </Typography.Text>
+            <Typography.Text size="xs" color="muted" className="block">
+              IP Address
+            </Typography.Text>
           </div>
         </div>
 
-        {/* Key Metrics */}
+        {/* Performance Metrics Grid */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {/* CPU */}
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <Cpu className="w-6 h-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
+            <Typography.Text size="lg" weight="bold" color="primary">
+              {loadAverage ? loadAverage : 'N/A'}
+            </Typography.Text>
+            <Typography.Text size="xs" color="muted" className="block">
+              Load Average
+            </Typography.Text>
+          </div>
+
+          {/* Memory */}
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <MemoryStick className="w-6 h-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
+            <Typography.Text size="lg" weight="bold" className={cn(getMemoryStatusColor(memoryUsage))}>
+              {memoryUsage > 0 ? `${memoryUsage.toFixed(1)}%` : 'N/A'}
+            </Typography.Text>
+            <Typography.Text size="xs" color="muted" className="block">
+              Memory Usage
+            </Typography.Text>
+          </div>
+
+          {/* Storage */}
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <HardDrive className="w-6 h-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
+            <Typography.Text size="lg" weight="bold" className={cn(getStorageStatusColor(storageUsage))}>
+              {storageUsage > 0 ? `${storageUsage.toFixed(1)}%` : 'N/A'}
+            </Typography.Text>
+            <Typography.Text size="xs" color="muted" className="block">
+              Storage Usage
+            </Typography.Text>
+          </div>
+
+          {/* Temperature */}
+          <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <Activity className="w-6 h-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
+            <Typography.Text size="lg" weight="bold" color="primary">
+              {isTemperatureLoading && '...'}
+              {!isTemperatureLoading && temperatureError && (
+                <Typography.Text size="lg" weight="bold" color="danger">Error</Typography.Text>
+              )}
+              {!isTemperatureLoading && !temperatureError && temperatureCelsius !== null &&
+                `${temperatureCelsius.toFixed(1)}°C`}
+              {!isTemperatureLoading && !temperatureError && temperatureCelsius === null && 'N/A'}
+            </Typography.Text>
+            <Typography.Text size="xs" color="muted" className="block">
+              CPU Temp
+            </Typography.Text>
+          </div>
+        </div>
+
+        {/* System Status */}
         <div className="space-y-2">
-          {systemMetrics?.cpu_usage && (
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500 dark:text-gray-400">CPU Usage:</span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                {systemMetrics.cpu_usage.toFixed(1)}%
-              </span>
-            </div>
-          )}
           {systemMetrics?.load_avg && (
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Load Average:</span>
-              <span className={cn("text-sm font-medium", safeGetLoadAverageColor(systemMetrics.load_avg))}>
+              <Typography.Text size="sm" color="muted">System Load:</Typography.Text>
+              <Typography.Text size="sm" weight="medium" color="primary">
                 {safeFormatLoadAverage(systemMetrics.load_avg)}
-              </span>
-            </div>
-          )}
-          {(temperatureCelsius !== null || isTemperatureLoading || temperatureError) && (
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500 dark:text-gray-400">CPU Temp:</span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                {isTemperatureLoading && 'Loading...'}
-                {!isTemperatureLoading && temperatureError && (
-                  <span className="text-red-600 dark:text-red-400">{temperatureError}</span>
-                )}
-                {!isTemperatureLoading && !temperatureError && temperatureCelsius !== null && `${temperatureCelsius.toFixed(1)}°C`}
-              </span>
+              </Typography.Text>
             </div>
           )}
           {systemInfo?.uptime && (
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500 dark:text-gray-400">Uptime:</span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">
-                {`${Math.floor(parseFloat(systemInfo.uptime) / 3600)}h ${Math.floor((parseFloat(systemInfo.uptime) % 3600) / 60)}m`}
-              </span>
+              <Typography.Text size="sm" color="muted">Uptime:</Typography.Text>
+              <Typography.Text size="sm" weight="medium" color="primary">
+                {formatUptime(parseFloat(systemInfo.uptime))}
+              </Typography.Text>
             </div>
           )}
         </div>
@@ -140,58 +130,120 @@ export class SystemInfoCard extends PureComponent<SystemInfoCardProps, SystemInf
     )
   }
 
-  renderDockerInfo = () => {
-    const { dockerInfo } = this.props
-    const isExpanded = this.state.expandedSections.docker
 
-    if (!isExpanded || !dockerInfo) return null
-
-    return (
-      <div className="px-4 pb-4 space-y-3">
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500 dark:text-gray-400">Docker Version:</span>
-          <span className="text-sm font-medium text-gray-900 dark:text-white">{dockerInfo.ServerVersion}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500 dark:text-gray-400">OS:</span>
-          <span className="text-sm font-medium text-gray-900 dark:text-white">{dockerInfo.OperatingSystem}</span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-500 dark:text-gray-400">Architecture:</span>
-          <span className="text-sm font-medium text-gray-900 dark:text-white">{dockerInfo.Architecture}</span>
-        </div>
-      </div>
-    )
-  }
 
   render() {
-    const { dockerInfo } = this.props
+    const { networkInfo, systemInfo, systemMetrics, temperatureCelsius, isTemperatureLoading, temperatureError, dockerInfo } = this.props
 
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow transition-colors">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
             <Server className="w-5 h-5" />
-            <span>System Overview</span>
+            <Typography.Text size="lg" weight="semibold" color="primary">
+              Privacy Hub Status</Typography.Text>
           </h3>
         </div>
 
-        <div className="divide-y divide-gray-200 dark:divide-gray-700">
-          {/* Basic Information Section */}
-          <div>
-            {this.renderSectionHeader('System Info', <Activity className="w-4 h-4" />, 'basic')}
-            {this.renderBasicInfo()}
+        <div className="p-6 space-y-6">
+          {/* System Identity */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <Typography.Text size="lg" weight="bold" color="primary">
+                {networkInfo?.hostname || systemInfo?.hostname || 'Unknown'}
+              </Typography.Text>
+              <Typography.Text size="xs" color="muted" className="block">
+                Hostname
+              </Typography.Text>
+            </div>
+            <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <Typography.Text size="lg" weight="bold" color="primary">
+                {networkInfo?.hostIP || systemInfo?.ip || 'Unknown'}
+              </Typography.Text>
+              <Typography.Text size="xs" color="muted" className="block">
+                IP Address
+              </Typography.Text>
+            </div>
           </div>
 
-          {/* Docker Information Section */}
-          {dockerInfo && (
-            <div>
-              {this.renderSectionHeader('Docker', <Server className="w-4 h-4" />, 'docker')}
-              {this.renderDockerInfo()}
+          {/* Performance Metrics */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* CPU */}
+            <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <Cpu className="w-6 h-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
+              <Typography.Text size="lg" weight="bold" color="primary">
+                {getLoadAverage(systemMetrics) || 'N/A'}
+              </Typography.Text>
+              <Typography.Text size="xs" color="muted" className="block">
+                CPU Usage
+              </Typography.Text>
             </div>
-          )}
+
+            {/* Memory */}
+            <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <MemoryStick className="w-6 h-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
+              <Typography.Text size="lg" weight="bold" className={cn(getMemoryStatusColor(calculateSystemMemoryPercent(systemMetrics)))}>
+                {calculateSystemMemoryPercent(systemMetrics) > 0 ? `${calculateSystemMemoryPercent(systemMetrics).toFixed(1)}%` : 'N/A'}
+              </Typography.Text>
+              <Typography.Text size="xs" color="muted" className="block">
+                Memory Usage
+              </Typography.Text>
+            </div>
+
+            {/* Storage */}
+            <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <HardDrive className="w-6 h-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
+              <Typography.Text size="lg" weight="bold" className={cn(getStorageStatusColor(calculateSystemStoragePercent(systemMetrics)))}>
+                {calculateSystemStoragePercent(systemMetrics) > 0 ? `${calculateSystemStoragePercent(systemMetrics).toFixed(1)}%` : 'N/A'}
+              </Typography.Text>
+              <Typography.Text size="xs" color="muted" className="block">
+                Storage Usage
+              </Typography.Text>
+            </div>
+
+            {/* Temperature */}
+            <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <Activity className="w-6 h-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
+              <Typography.Text size="lg" weight="bold" color="primary">
+                {isTemperatureLoading && '...'}
+                {!isTemperatureLoading && temperatureError && (
+                  <Typography.Text size="lg" weight="bold" color="danger">Error</Typography.Text>
+                )}
+                {!isTemperatureLoading && !temperatureError && temperatureCelsius !== null &&
+                  `${temperatureCelsius.toFixed(1)}°C`}
+                {!isTemperatureLoading && !temperatureError && temperatureCelsius === null && 'N/A'}
+              </Typography.Text>
+              <Typography.Text size="xs" color="muted" className="block">
+                CPU Temp
+              </Typography.Text>
+            </div>
+          </div>
+
+          {/* System Status */}
+          <div className="space-y-2">
+            {systemMetrics?.load_avg && (
+              <div className="flex justify-between items-center">
+                <Typography.Text size="sm" color="muted">System Load:</Typography.Text>
+                <Typography.Text size="sm" weight="medium" color="primary">
+                  {safeFormatLoadAverage(systemMetrics.load_avg)}
+                </Typography.Text>
+              </div>
+            )}
+            {systemInfo?.uptime && (
+              <div className="flex justify-between items-center">
+                <Typography.Text size="sm" color="muted">Uptime:</Typography.Text>
+                <Typography.Text size="sm" weight="medium" color="primary">
+                  {formatUptime(parseFloat(systemInfo.uptime))}
+                </Typography.Text>
+              </div>
+            )}
+          </div>
+
+
         </div>
       </div>
     )
   }
 }
+
+export default connector(SystemInfoCard)

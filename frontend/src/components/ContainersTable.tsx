@@ -7,6 +7,7 @@ import { ContainerRow } from '@/components/ContainerRow'
 import { ContainerLogs } from '@/components/ContainerLogs'
 import { Button } from '@/components/ui/Button'
 //import { CountdownTimer } from '@/components/ui/CountdownTimer'
+import { Typography } from '@/components/ui/Typography'
 import type { RootState } from '@/store'
 import { cn } from '@/utils/cn'
 
@@ -99,12 +100,14 @@ class ContainersTableBase extends Component<ContainersTableProps, ContainersTabl
                   {containerStatus.isConnected ? (
                     <>
                       <Wifi className="w-4 h-4 text-green-500" />
-                      <span className="text-green-600 dark:text-green-400">Connected</span>
+                      <Typography.Text size="sm" color="success">
+                        Connected</Typography.Text>
                     </>
                   ) : (
                     <>
                       <WifiOff className="w-4 h-4 text-red-500" />
-                      <span className="text-red-600 dark:text-red-400">Disconnected</span>
+                      <Typography.Text size="sm" color="danger">
+                        Disconnected</Typography.Text>
                     </>
                   )}
                 </div>
@@ -126,7 +129,7 @@ class ContainersTableBase extends Component<ContainersTableProps, ContainersTabl
                 {containerError && (
                   <div className="flex items-center space-x-1">
                     <AlertCircle className="w-4 h-4 text-yellow-500" />
-                    <span className="text-yellow-600 dark:text-yellow-400">Warning</span>
+                    <Typography.Text size="sm" color="warning">Warning</Typography.Text>
                   </div>
                 )}
               </div>
