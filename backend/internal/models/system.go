@@ -2,16 +2,16 @@ package models
 
 // MemoryInfo holds parsed memory statistics
 type MemoryInfo struct {
-	Total int64 // Total memory in KB
-	Free  int64 // Available memory in KB
-	Used  int64 // Used memory in KB
+	Total int64  `json:"total"`  // Total memory in KB
+	Free  int64  `json:"free"`   // Available memory in KB
+	Used  int64  `json:"used"`  // Used memory in KB
 }
 
 // DiskInfo holds disk usage statistics
 type DiskInfo struct {
-	Total int64 // Total disk space in bytes
-	Free  int64 // Free disk space in bytes
-	Used  int64 // Used disk space in bytes
+	Total int64  `json:"total"`// Total disk space in bytes
+	Free  int64  `json:"free"` // Free disk space in bytes
+	Used  int64  `json:"used"` // Used disk space in bytes
 }
 
 // StorageInfo holds comprehensive storage information
