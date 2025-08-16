@@ -2,7 +2,7 @@ import { PureComponent } from 'react'
 import { connect, ConnectedProps } from 'react-redux'
 import { Server, Cpu, Activity, HardDrive, MemoryStick } from 'lucide-react'
 import { safeFormatLoadAverage } from '@/utils/formatLoadAverage'
-import { calculateSystemMemoryPercent, calculateSystemStoragePercent, getMemoryStatusColor, getStorageStatusColor, getLoadAverage } from '@/utils/calculateSystemMetrics'
+import { calculateSystemMemoryPercent, calculateSystemStoragePercent, getMemoryStatusColor, getStorageStatusColor, getCpuUsagePercent } from '@/utils/calculateSystemMetrics'
 import { formatUptime } from '@/utils/formatUptime'
 import { cn } from '@/utils/cn'
 import { Typography } from '@/components/ui/Typography'
@@ -60,18 +60,18 @@ class SystemInfoCard extends PureComponent<SystemInfoCardProps> {
           <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <Cpu className="w-6 h-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
             <Typography.Text size="lg" weight="bold" color="primary">
-              {loadAverage ? loadAverage : 'N/A'}
+              {getCpuUsagePercent(systemMetrics) > 0 ? `${getCpuUsagePercent(systemMetrics)}%` : 'N/A'}
             </Typography.Text>
             <Typography.Text size="xs" color="muted" className="block">
-              Load Average
+              CPU Usage
             </Typography.Text>
           </div>
 
           {/* Memory */}
           <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <MemoryStick className="w-6 h-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
-            <Typography.Text size="lg" weight="bold" className={cn(getMemoryStatusColor(memoryUsage))}>
-              {memoryUsage > 0 ? `${memoryUsage.toFixed(1)}%` : 'N/A'}
+            <Typography.Text size="lg" weight="bold" className={cn(getMemoryStatusColor(calculateSystemMemoryPercent(systemMetrics)))}>
+              {calculateSystemMemoryPercent(systemMetrics) > 0 ? `${calculateSystemMemoryPercent(systemMetrics).toFixed(1)}%` : 'N/A'}
             </Typography.Text>
             <Typography.Text size="xs" color="muted" className="block">
               Memory Usage
@@ -81,8 +81,8 @@ class SystemInfoCard extends PureComponent<SystemInfoCardProps> {
           {/* Storage */}
           <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
             <HardDrive className="w-6 h-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
-            <Typography.Text size="lg" weight="bold" className={cn(getStorageStatusColor(storageUsage))}>
-              {storageUsage > 0 ? `${storageUsage.toFixed(1)}%` : 'N/A'}
+            <Typography.Text size="lg" weight="bold" className={cn(getStorageStatusColor(calculateSystemStoragePercent(systemMetrics)))}>
+              {calculateSystemStoragePercent(systemMetrics) > 0 ? `${calculateSystemStoragePercent(systemMetrics).toFixed(1)}%` : 'N/A'}
             </Typography.Text>
             <Typography.Text size="xs" color="muted" className="block">
               Storage Usage
@@ -172,7 +172,7 @@ class SystemInfoCard extends PureComponent<SystemInfoCardProps> {
             <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
               <Cpu className="w-6 h-6 mx-auto mb-2 text-gray-600 dark:text-gray-400" />
               <Typography.Text size="lg" weight="bold" color="primary">
-                {getLoadAverage(systemMetrics) || 'N/A'}
+                {getCpuUsagePercent(systemMetrics) > 0 ? `${getCpuUsagePercent(systemMetrics)}%` : 'N/A'}
               </Typography.Text>
               <Typography.Text size="xs" color="muted" className="block">
                 CPU Usage

@@ -45,9 +45,20 @@ export const getStorageStatusColor = (usagePercent: number): string => {
 }
 
 /**
- * Get load average value from system metrics
+ * Calculate CPU usage percentage from load average for Raspberry Pi 4
+ * Load average string format: "1.05 0.05 2.0" (1min 5min 15min)
+ * Raspberry Pi 4 has 4 cores, so load of 4.0 = 100% CPU usage
  */
-export const getLoadAverage = (systemMetrics: SystemMetrics | null): string | null => {
-    if (!systemMetrics?.load_avg) return null
-    return systemMetrics.load_avg.split(' ')[0]
+export const getCpuUsagePercent = (systemMetrics: SystemMetrics | null): number => {
+    if (!systemMetrics?.load_avg) return 0
+
+    const loadValues = systemMetrics.load_avg.split(' ').map(v => parseFloat(v))
+    const oneMinLoad = loadValues[0] || 0
+
+    // Raspberry Pi 4 has 4 cores
+    // Load average of 4.0 = 100% CPU usage
+    // Load average of 1.0 = 25% CPU usage
+    const cpuUsage = Math.min((oneMinLoad / 4) * 100, 100)
+
+    return Math.round(cpuUsage)
 }
