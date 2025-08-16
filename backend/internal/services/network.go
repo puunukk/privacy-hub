@@ -203,18 +203,54 @@ func (s *NetworkService) getHostIPFromInterfaces() string {
 
 // findHostIPInSubnet tries to find the host IP in the same subnet as the gateway
 func (s *NetworkService) findHostIPInSubnet(gateway string) string {
-	// This is a simplified implementation
-	// In practice, you might want to scan the subnet or use other methods
-	// For now, let's try to get it from the host's network configuration
-	
-	// Try to get from host's network interfaces
+	// Get the host IP from the host's network interfaces
+	// Use the mounted host filesystem to read the actual host network info
 	hostNetPath := s.platform.ResolvePath("proc", "net/dev")
 	if hostNetPath == "" {
 		return ""
 	}
 	
-	// This is a placeholder - you'd need to implement proper subnet scanning
-	// For now, return empty and let other methods handle it
+	// Read host's network interfaces and find the main interface IP
+	if data, err := utils.ReadFile(hostNetPath); err == nil {
+		lines := strings.Split(data, "\n")
+		for _, line := range lines {
+			fields := strings.Fields(line)
+			if len(fields) >= 2 {
+				// Look for the main interface (eth0, wlan0, etc.)
+				iface := fields[0]
+				if strings.HasPrefix(iface, "eth") || strings.HasPrefix(iface, "wlan") {
+					// Get the IP for this interface from host's routing table
+					if hostIP := s.getHostIPForInterface(iface); hostIP != "" {
+						return hostIP
+					}
+				}
+			}
+		}
+	}
+	
+	return ""
+}
+
+// getHostIPForInterface gets the IP address for a specific interface from host's routing table
+func (s *NetworkService) getHostIPForInterface(iface string) string {
+	hostRoutePath := s.platform.ResolvePath("proc", "net/route")
+	if hostRoutePath == "" {
+		return ""
+	}
+	
+	if data, err := utils.ReadFile(hostRoutePath); err == nil {
+		lines := strings.Split(data, "\n")
+		for _, line := range lines {
+			fields := strings.Fields(line)
+			if len(fields) >= 1 && fields[0] == iface {
+				// Found the interface, get the source IP from the default route
+				if len(fields) >= 7 && fields[1] == "00000000" { // Default route
+					return s.hexToIP(fields[6]) // Source IP is in field 7
+				}
+			}
+		}
+	}
+	
 	return ""
 }
 
