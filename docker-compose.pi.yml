@@ -60,6 +60,7 @@ services:
       TASKS: 0
       SECRETS: 0
       POST: 1
+      STATS: 1  # Enable container statistics (CPU/memory usage)
       LOG_LEVEL: info
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro

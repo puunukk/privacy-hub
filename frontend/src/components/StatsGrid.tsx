@@ -1,6 +1,6 @@
 import { Server, Activity, Cpu, MemoryStick } from 'lucide-react'
 import type { DockerInfo } from '../types/docker'
-import { formatBytes } from '../utils/docker'
+import { formatBytes } from '../utils/formatBytes'
 
 interface StatsGridProps {
   dockerInfo: DockerInfo
@@ -17,7 +17,7 @@ export const StatsGrid = ({ dockerInfo }: StatsGridProps) => (
         <Server className="h-8 w-8 text-blue-500" />
       </div>
     </div>
-    
+
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex items-center justify-between">
         <div>
@@ -27,7 +27,7 @@ export const StatsGrid = ({ dockerInfo }: StatsGridProps) => (
         <Activity className="h-8 w-8 text-green-500" />
       </div>
     </div>
-    
+
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex items-center justify-between">
         <div>
@@ -37,7 +37,7 @@ export const StatsGrid = ({ dockerInfo }: StatsGridProps) => (
         <Cpu className="h-8 w-8 text-purple-500" />
       </div>
     </div>
-    
+
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex items-center justify-between">
         <div>

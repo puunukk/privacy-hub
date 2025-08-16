@@ -32,6 +32,9 @@ export interface DockerContainer {
     RW: boolean
     Propagation: string
   }>
+  // Runtime stats (populated when container is running)
+  cpuUsage?: string
+  memUsage?: string
 }
 
 export interface DockerInfo {
@@ -120,8 +123,17 @@ export interface DockerInfo {
 export interface ContainerStats {
   read: string
   memory_stats: {
-    usage: number
-    limit: number
+    usage?: number
+    limit?: number
+    stats?: {
+      active_anon?: number
+      active_file?: number
+      anon?: number
+      file?: number
+      inactive_anon?: number
+      inactive_file?: number
+      [key: string]: number | undefined
+    }
   }
   cpu_stats: {
     cpu_usage: {

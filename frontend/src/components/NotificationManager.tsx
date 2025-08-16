@@ -1,14 +1,19 @@
 import { Component } from 'react'
+import { connect } from 'react-redux'
+import { Dispatch } from '@reduxjs/toolkit'
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react'
-import { withSystemRedux } from '../store/hoc/withRedux'
-import type { SystemReduxProps } from '../store/hoc/withRedux'
-import { hideNotification } from '../store/slices/systemSlice'
+import { hideNotification } from '../store/appConfig/appConfigSlice'
+import type { RootState } from '../store'
+import type { Notification } from '../store/appConfig/types'
 
-interface NotificationManagerProps extends SystemReduxProps {}
+interface NotificationManagerProps {
+  notifications: Notification[]
+  dispatch: Dispatch
+}
 
-interface NotificationManagerState {}
+interface NotificationManagerState { }
 
-class NotificationManagerBase extends Component<NotificationManagerProps, NotificationManagerState> {
+class NotificationManager extends Component<NotificationManagerProps, NotificationManagerState> {
   constructor(props: NotificationManagerProps) {
     super(props)
     this.state = {}
@@ -71,7 +76,7 @@ class NotificationManagerBase extends Component<NotificationManagerProps, Notifi
           >
             <div className="flex items-start space-x-3">
               {this.getNotificationIcon(notification.type)}
-              
+
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium">
                   {notification.title}
@@ -96,4 +101,13 @@ class NotificationManagerBase extends Component<NotificationManagerProps, Notifi
   }
 }
 
-export const NotificationManager = withSystemRedux(NotificationManagerBase)
+// Redux connection
+const mapStateToProps = (state: RootState) => ({
+  notifications: state.appConfig.notifications
+})
+
+const mapDispatchToProps = (dispatch: Dispatch) => ({
+  dispatch
+})
+
+export default connect(mapStateToProps, mapDispatchToProps)(NotificationManager)

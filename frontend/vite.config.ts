@@ -3,6 +3,14 @@ import react from '@vitejs/plugin-react'
 import svgr from 'vite-plugin-svgr'
 import { fileURLToPath, URL } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
+import { readFileSync } from 'fs'
+
+// Read package.json for version
+const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'))
+
+// Get build timestamp that only changes when build actually happens
+const buildTime = new Date().toISOString()
+const buildId = Math.floor(Date.now() / 1000).toString(36) // Convert to base36 for shorter string
 
 export default defineConfig({
   plugins: [
@@ -27,6 +35,14 @@ export default defineConfig({
   // Use root base so assets resolve from /assets regardless of subpath like /dashboard or /home
   // base: '/',
   base: '/dashboard/',
+  define: {
+    // Inject version information at build time
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+    // Inject build timestamp that only changes when build actually happens
+    __BUILD_TIME__: JSON.stringify(buildTime),
+    __BUILD_ID__: JSON.stringify(buildId),
+    __NODE_ENV__: JSON.stringify(process.env.NODE_ENV || 'development'),
+  },
   build: {
     outDir: 'dist',
     sourcemap: false,

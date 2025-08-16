@@ -12,72 +12,45 @@ export interface RealNetworkInfo {
 
 export const detectRealNetworkInfo = async (): Promise<RealNetworkInfo> => {
   try {
-    // First, try to detect from browser location (more reliable)
-    const currentHost = window.location.hostname
-    if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-      // User is accessing via actual IP
-      const hostParts = currentHost.split('.')
-      const gateway = `${hostParts[0]}.${hostParts[1]}.${hostParts[2]}.1`
-      const subnet = `${hostParts[0]}.${hostParts[1]}.${hostParts[2]}.0/24`
-      
-      return {
-        hostIP: currentHost,
-        hostname: currentHost || 'privacy-hub',
-        gateway,
-        subnet,
-        isDhcpClient: true,
-        dnsServers: [gateway, '8.8.8.8']
-      }
-    }
-    
-    // Try to get real network info from Docker API (optional)
-    try {
-      const response = await fetch('/api/docker/containers/json?filters={"name":["frontend"]}')
-      if (response.ok) {
-        const containers = await response.json()
-        if (containers.length > 0) {
-          const frontend = containers[0]
-          const networks = Object.values(frontend.NetworkSettings.Networks)[0] as any
-          
-          if (networks?.IPAddress) {
-            // Extract network info from Docker container network
-            const gateway = networks.Gateway
-            const subnet = `${gateway.split('.').slice(0, 3).join('.')}.0/24`
-            
-            // Try to determine host IP (usually gateway + some offset)
-            const gatewayParts = gateway.split('.')
-            const hostIP = `${gatewayParts[0]}.${gatewayParts[1]}.${gatewayParts[2]}.${parseInt(gatewayParts[3]) + 1}`
-            
-            return {
-              hostIP,
-              hostname: 'privacy-hub',
-              gateway,
-              subnet,
-              isDhcpClient: true,
-              dnsServers: [gateway, '8.8.8.8'],
-              macAddress: 'detecting...'
-            }
-          }
+    console.log('🔍 Detecting host network info from browser hostname...')
+
+    // The IP clients use to access the app - this IS the host's actual local network IP
+    const hostIP = window.location.hostname
+    console.log('📍 Client accesses app via:', hostIP)
+
+    // If accessing via real IP (not localhost), this IS the correct host IP
+    if (hostIP !== 'localhost' && hostIP !== '127.0.0.1' && hostIP !== '0.0.0.0') {
+      const hostParts = hostIP.split('.')
+      if (hostParts.length === 4 && hostParts.every(part => !isNaN(parseInt(part)))) {
+        // Calculate network info based on the actual host IP
+        const gateway = `${hostParts[0]}.${hostParts[1]}.${hostParts[2]}.1`
+        const subnet = `${hostParts[0]}.${hostParts[1]}.${hostParts[2]}.0/24`
+
+        console.log('✅ Detected host network info:', {
+          hostIP,
+          gateway,
+          subnet,
+          note: 'This is the actual host machine IP from browser URL'
+        })
+
+        return {
+          hostIP,
+          hostname: 'privacy-hub',
+          gateway,
+          subnet,
+          isDhcpClient: true,
+          dnsServers: [hostIP, gateway, '8.8.8.8', '1.1.1.1']
         }
       }
-    } catch (dockerError) {
-      console.warn('Docker API not available, using fallback network detection:', dockerError)
     }
 
-    
-    // Last resort: reasonable defaults for development
-    return {
-      hostIP: '192.168.1.100',
-      hostname: 'privacy-hub',
-      gateway: '192.168.1.1',
-      subnet: '192.168.1.0/24',
-      isDhcpClient: true,
-      dnsServers: ['192.168.1.1', '8.8.8.8']
-    }
-    
+    // If accessing via localhost, we can't determine the real network info
+    console.warn('⚠️ Accessing via localhost - cannot determine real network info')
+    throw new Error('Cannot determine network info when accessing via localhost. Please access using the actual IP address.')
+
   } catch (error) {
     console.error('Failed to detect network info:', error)
-    
+
     // Emergency fallback
     return {
       hostIP: 'detecting...',

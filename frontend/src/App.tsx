@@ -1,88 +1,136 @@
 import { Component } from 'react'
-import { Provider } from 'react-redux'
-import { Header } from './components/Header'
-import { ErrorAlert } from './components/ErrorAlert'
-import { SystemInfo } from './components/SystemInfo'
-import { ContainersTable } from './components/ContainersTable'
-import { NotificationManager } from './components/NotificationManager'
-import { DebugInfo } from './components/DebugInfo'
-import { store } from './store/store'
-import { connect } from 'react-redux'
-import type { RootState } from './store/store'
-import { SystemActionTypes } from './store/actions/types'
+import { connect, ConnectedProps } from 'react-redux'
 import type { Dispatch } from '@reduxjs/toolkit'
 
-interface AppContentProps {
-  globalError: string | null
-  networkInfo: RootState['network']['networkInfo']
-  networkError: string | null
-  dockerInfo: RootState['containers']['dockerInfo']
-  containerError: string | null
-  dispatch: Dispatch
-}
+import { ErrorAlert } from './components/ErrorAlert'
+import { QuickAccess } from './components/QuickAccess'
+import { SystemInfoCard } from './components/SystemInfoCard'
+import { ResourcesCard } from './components/ResourcesCard'
+import { NetworkSetupCard } from './components/NetworkSetupCard'
+import { ContainersTable } from './components/ContainersTable'
+import type { RootState } from './store'
+import { cn } from './utils/cn'
+import { Typography } from './components/ui/Typography'
+import Header from './connectedComponents/Header'
+import NotificationManager from './components/NotificationManager'
+import { SystemInfoActionTypes } from './store/systemInfo/types'
+import { MetricsActionTypes } from './store/metrics/types'
+import { AppConfigActionTypes } from './store/appConfig/types'
+import { getDisplayVersion } from './utils/version'
 
-interface AppContentState {}
+const mapStateToProps = (state: RootState) => ({
+  globalError: state.appConfig.error,
+  networkInfo: state.systemInfo.data ? {
+    hostIP: state.systemInfo.data.ip || 'unknown',
+    hostname: state.systemInfo.data.hostname || 'privacy-hub',
+    gateway: state.systemInfo.data.gateway || '192.168.1.1',
+    subnet: '192.168.1.0/24', // Default subnet
+    isDhcpClient: true,
+    dnsServers: [state.systemInfo.data.dns || '8.8.8.8', '1.1.1.1']
+  } : null,
+  networkError: state.systemInfo.error,
+  dockerInfo: state.containers.dockerInfo,
+  containerError: state.containers.error,
+  systemInfo: state.systemInfo.data,
+  systemMetrics: state.metrics.data,
+  temperatureCelsius: state.metrics.data?.cpu_temp ?? null,
+  temperatureError: state.metrics.error,
+  isTemperatureLoading: state.metrics.status === 'LOADING',
+})
 
-class AppContentBase extends Component<AppContentProps, AppContentState> {
-  constructor(props: AppContentProps) {
-    super(props)
-    this.state = {}
-  }
+const mapDispatchToProps = (dispatch: Dispatch) => ({ dispatch })
+
+const connector = connect(mapStateToProps, mapDispatchToProps)
+type AppProps = ConnectedProps<typeof connector>
+
+
+/**
+ * App component - the main component for the application.
+ *
+ * This is the main component for the application.
+ * It is responsible for rendering the header, main content, and footer.
+ * It also handles the initialization of the application and the fetching of the temperature.
+ */
+class App extends Component<AppProps> {
+  // Cache version info to avoid recalculating on every render
+  private displayVersion = getDisplayVersion()
 
   componentDidMount() {
-    this.props.dispatch({ type: SystemActionTypes.INITIALIZE_APP })
+    const { dispatch } = this.props
+    dispatch({ type: AppConfigActionTypes.INITIALIZE_APP })
+    //  // Ensure temperature fetch runs even if init saga timing changes
+    //  dispatch({ type: TemperatureActionTypes.FETCH_TEMPERATURE_REQUEST })
+    dispatch({ type: SystemInfoActionTypes.FETCH_SYSTEM_INFO_REQUEST })
+    dispatch({ type: MetricsActionTypes.FETCH_METRICS_REQUEST })
   }
 
   render() {
-    const { 
+    const {
       globalError,
-      networkInfo, 
+      networkInfo,
       networkError,
-      dockerInfo, 
-      containerError 
+      dockerInfo,
+      containerError
     } = this.props
 
+    const pageContainerCls = cn(
+      'min-h-screen', // full height
+      'bg-gray-50 dark:bg-gray-900 transition-colors' // background color
+    )
+
+    const mainCls = cn(
+      'max-w-7xl mx-auto', // page container
+      'px-4 sm:px-6 lg:px-8 py-8', // page padding
+    )
+
+
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <div className={pageContainerCls}>
         <Header />
-        
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <main className={mainCls}>
+
           {networkError && <ErrorAlert error={networkError} />}
           {containerError && <ErrorAlert error={containerError} />}
           {globalError && <ErrorAlert error={globalError} />}
 
-          <SystemInfo dockerInfo={dockerInfo} networkInfo={networkInfo} />
-          
+          <QuickAccess />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8 px-6">
+            <SystemInfoCard
+              dockerInfo={dockerInfo}
+              networkInfo={networkInfo}
+              systemInfo={this.props.systemInfo as any}
+              systemMetrics={this.props.systemMetrics as any}
+              temperatureCelsius={this.props.temperatureCelsius}
+              isTemperatureLoading={this.props.isTemperatureLoading}
+              temperatureError={this.props.temperatureError}
+            />
+            <ResourcesCard
+              dockerInfo={dockerInfo}
+              systemMetrics={this.props.systemMetrics as any}
+              temperatureCelsius={this.props.temperatureCelsius}
+            />
+            <div className="xl:col-span-1 md:col-span-2">
+              <NetworkSetupCard networkInfo={networkInfo} />
+            </div>
+          </div>
+
           <ContainersTable />
         </main>
 
+        <footer className="transition-colors">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center">
+            <Typography.Text size="sm" color="muted">
+              Private Hub ver. {this.displayVersion} &copy; {new Date().getFullYear()}
+            </Typography.Text>
+          </div>
+        </footer>
+
         <NotificationManager />
-        <DebugInfo />
       </div>
     )
   }
 }
 
-// Connect AppContent to Redux
-const AppContent = connect(
-  (state: RootState) => ({
-    globalError: state?.system?.globalError || null,
-    networkInfo: state?.network?.networkInfo || null,
-    networkError: state?.network?.error || null,
-    dockerInfo: state?.containers?.dockerInfo || null,
-    containerError: state?.containers?.error || null,
-  }),
-  (dispatch: Dispatch) => ({ dispatch })
-)(AppContentBase)
-
-class App extends Component {
-  render() {
-    return (
-      <Provider store={store}>
-        <AppContent />
-      </Provider>
-    )
-  }
-}
-
-export default App
+export default connector(App) 

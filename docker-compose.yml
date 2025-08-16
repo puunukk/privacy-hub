@@ -61,12 +61,13 @@ services:
       CONTAINERS: 1
       IMAGES: 1
       INFO: 1
+      STATS: 1 # Enable container statistics (CPU/memory usage)
       NETWORKS: 0
       VOLUMES: 0
       SERVICES: 0
       TASKS: 0
       SECRETS: 0
-      POST: 1  # Allow start/stop/restart only
+      POST: 1 # Allow start/stop/restart only
       LOG_LEVEL: info
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -83,10 +84,10 @@ services:
     hostname: nginx
     ports:
       # ONLY these ports exposed to network
-      - "53:53/tcp"      # DNS
-      - "53:53/udp"      # DNS  
-      - "80:80"          # HTTP
-      - "443:443"        # HTTPS
+      - "53:53/tcp" # DNS
+      - "53:53/udp" # DNS  
+      - "80:80" # HTTP
+      - "443:443" # HTTPS
     volumes:
       - './nginx/ssl:/etc/nginx/ssl'
     tmpfs:

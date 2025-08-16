@@ -1,6 +1,9 @@
 # Development container - PROPERLY SETUP
 FROM node:22-alpine
 
+# Install bash for Dev Container support
+#RUN apk add --no-cache bash
+
 WORKDIR /app
 
 # Install dependencies first
