@@ -9,8 +9,7 @@ COPY cmd/ ./cmd/
 COPY internal/ ./internal/
 
 # Download dependencies and build
-RUN go mod download && \
-    CGO_ENABLED=0 GOOS=linux go build -o privacy-hub-backend cmd/main.go
+RUN go mod download && CGO_ENABLED=0 GOOS=linux go build -o privacy-hub-backend cmd/main.go
 
 # Runtime stage  
 FROM alpine:latest
