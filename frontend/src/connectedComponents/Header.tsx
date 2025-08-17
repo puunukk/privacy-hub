@@ -43,19 +43,19 @@ class Header extends Component<HeaderProps, HeaderState> {
 
   handleShutdown = () => {
     const { dispatch } = this.props
-    dispatch({ type: SystemActionTypes.SYSTEM_SHUTDOWN_REQUEST })
+    dispatch({ type: SystemActionTypes.SYSTEM_SHUTDOWN_REQUEST, payload: { command: 'shutdown' } })
     this.hideSystemActionsModal()
   }
 
   handleReboot = () => {
     const { dispatch } = this.props
-    dispatch({ type: SystemActionTypes.SYSTEM_REBOOT_REQUEST })
+    dispatch({ type: SystemActionTypes.SYSTEM_REBOOT_REQUEST, payload: { command: 'restart' } })
     this.hideSystemActionsModal()
   }
 
   handleForceShutdown = () => {
     const { dispatch } = this.props
-    dispatch({ type: SystemActionTypes.SYSTEM_FORCE_SHUTDOWN_REQUEST })
+    dispatch({ type: SystemActionTypes.SYSTEM_FORCE_SHUTDOWN_REQUEST, payload: { command: 'force-shutdown' } })
     this.hideSystemActionsModal()
   }
 

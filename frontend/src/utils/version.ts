@@ -14,7 +14,7 @@ export interface VersionInfo {
 
 export function getVersionInfo(): VersionInfo {
     // Get version from package.json or environment, with fallback
-    const version = import.meta.env.VITE_APP_VERSION || '0.0.1'
+    const version = (import.meta as any).env?.VITE_APP_VERSION || '0.0.1'
 
     // Use build timestamp that only changes when build actually happens
     const buildTime = __BUILD_TIME__ || new Date().toISOString()

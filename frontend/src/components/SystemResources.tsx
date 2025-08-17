@@ -128,7 +128,7 @@ export class SystemResources extends PureComponent<SystemResourcesProps> {
                             label="Memory Usage"
                             used={systemMetrics.memory_used}
                             total={systemMetrics.memory_total}
-                            unit="KB"
+                            unit="MB"
                             color="blue"
                         />
 
@@ -177,7 +177,7 @@ export class SystemResources extends PureComponent<SystemResourcesProps> {
                             label="Disk Usage"
                             used={systemMetrics.storage?.root_partition?.used || 0}
                             total={systemMetrics.storage?.root_partition?.total || 0}
-                            unit="B"
+                            unit="GB"
                             color="green"
                         />
 
@@ -205,7 +205,7 @@ export class SystemResources extends PureComponent<SystemResourcesProps> {
                         {/* Storage info text */}
                         <div className="text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded p-2">
                             <Typography.Text size="xs" color="muted">
-                                {storageTotal > 0
+                                {(systemMetrics.storage?.root_partition?.total || 0) > 0
                                     ? "Storage data is collected using system calls and represents the root filesystem (/). Free space includes reserved space for system operations."
                                     : "No storage data available. This might indicate a backend issue with storage detection."
                                 }

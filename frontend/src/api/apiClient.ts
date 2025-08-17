@@ -1,7 +1,7 @@
 import type { ApiResponse } from '@/api/types';
 
-const ipUrl: string | undefined = import.meta.env.VITE_SERVER_URL;
-const nameUrl: string | undefined = import.meta.env.HOSTNAME ? `${import.meta.env.HOSTNAME}.${import.meta.env.LOCAL_DOMAIN}` : undefined;
+const ipUrl: string | undefined = (import.meta as any).env?.VITE_SERVER_URL;
+const nameUrl: string | undefined = (import.meta as any).env?.HOSTNAME ? `${(import.meta as any).env.HOSTNAME}.${(import.meta as any).env.LOCAL_DOMAIN}` : undefined;
 
 const API_URL = nameUrl || ipUrl || '';
 

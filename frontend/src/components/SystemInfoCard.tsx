@@ -133,7 +133,7 @@ class SystemInfoCard extends PureComponent<SystemInfoCardProps> {
 
 
   render() {
-    const { networkInfo, systemInfo, systemMetrics, temperatureCelsius, isTemperatureLoading, temperatureError, dockerInfo } = this.props
+    const { networkInfo, systemInfo, systemMetrics, temperatureCelsius, isTemperatureLoading, temperatureError } = this.props
 
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow transition-colors">

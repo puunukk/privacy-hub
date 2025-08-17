@@ -19,22 +19,8 @@ import { getDisplayVersion } from './utils/version'
 
 const mapStateToProps = (state: RootState) => ({
   globalError: state.appConfig.error,
-  networkInfo: state.systemInfo.data ? {
-    hostIP: state.systemInfo.data.ip || 'unknown',
-    hostname: state.systemInfo.data.hostname || 'privacy-hub',
-    gateway: state.systemInfo.data.gateway || '192.168.1.1',
-    subnet: '192.168.1.0/24', // Default subnet
-    isDhcpClient: true,
-    dnsServers: [state.systemInfo.data.dns || '8.8.8.8', '1.1.1.1']
-  } : null,
   networkError: state.systemInfo.error,
-  dockerInfo: state.containers.dockerInfo,
   containerError: state.containers.error,
-  systemInfo: state.systemInfo.data,
-  systemMetrics: state.metrics.data,
-  temperatureCelsius: state.metrics.data?.cpu_temp ?? null,
-  temperatureError: state.metrics.error,
-  isTemperatureLoading: state.metrics.status === 'LOADING',
 })
 
 const mapDispatchToProps = (dispatch: Dispatch) => ({ dispatch })
@@ -66,9 +52,7 @@ class App extends Component<AppProps> {
   render() {
     const {
       globalError,
-      networkInfo,
       networkError,
-      dockerInfo,
       containerError
     } = this.props
 
@@ -94,14 +78,12 @@ class App extends Component<AppProps> {
 
           <QuickAccess />
 
-          <div className="space-y-6 mb-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <SystemInfoCard />
-              </div>
-              <div className="lg:col-span-1">
-                <NetworkSetupCard />
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <SystemInfoCard />
+            </div>
+            <div className="lg:col-span-1">
+              <NetworkSetupCard />
             </div>
           </div>
 
