@@ -1,0 +1,43 @@
+# Build stage for Linux service
+FROM golang:1.25-alpine AS builder
+
+WORKDIR /app
+
+# Copy go files
+COPY go.mod ./
+COPY cmd/ ./cmd/
+COPY internal/ ./internal/
+
+# Download dependencies and build for Linux
+RUN go mod download && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o privacy-hub-backend cmd/main.go
+
+# Service installation stage
+FROM alpine:latest
+
+# Install systemd and other utilities
+RUN apk --no-cache add systemd systemd-sysv
+
+# Create service directory
+RUN mkdir -p /opt/privacy-hub-backend
+
+# Copy binary from build stage
+COPY --from=builder /app/privacy-hub-backend /opt/privacy-hub-backend/
+
+# Copy service file
+COPY privacy-hub-backend.service /etc/systemd/system/
+
+# Make executable
+RUN chmod +x /opt/privacy-hub-backend/privacy-hub-backend
+
+# Create installation script
+RUN echo '#!/bin/sh\n\
+    # Install and enable the service\n\
+    systemctl daemon-reload\n\
+    systemctl enable privacy-hub-backend.service\n\
+    systemctl start privacy-hub-backend.service\n\
+    echo "Privacy Hub Backend service installed and started"\n\
+    ' > /install-service.sh && chmod +x /install-service.sh
+
+# Run installation script
+CMD ["/install-service.sh"]

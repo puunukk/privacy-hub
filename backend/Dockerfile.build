@@ -1,4 +1,4 @@
-# Build-only Dockerfile for creating standalone binary
+# Build stage for Linux service
 FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
@@ -8,16 +8,18 @@ COPY go.mod ./
 COPY cmd/ ./cmd/
 COPY internal/ ./internal/
 
-# Download dependencies and build standalone binary
+# Download dependencies and build for Linux ARM64 (Raspberry Pi)
 RUN go mod download && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o privacy-hub-backend cmd/main.go
+    CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o privacy-hub-backend cmd/main.go
 
-# Create a minimal runtime image just for extracting the binary
-FROM alpine:latest AS extractor
+# Simple runtime stage that just holds the binary
+FROM alpine:latest
 
 # Copy binary from build stage
 COPY --from=builder /app/privacy-hub-backend /privacy-hub-backend
 
-# Create output directory and copy binary
-RUN mkdir -p /output
-CMD ["cp", "/privacy-hub-backend", "/output/"]
+# Make executable
+RUN chmod +x /privacy-hub-backend
+
+# Just keep the container running with the binary available
+CMD ["sleep", "infinity"]

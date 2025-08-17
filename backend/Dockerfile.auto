@@ -1,0 +1,108 @@
+# Multi-stage build for automated backend service installation
+FROM golang:1.25-alpine AS builder
+
+WORKDIR /app
+
+# Copy go files
+COPY go.mod ./
+COPY cmd/ ./cmd/
+COPY internal/ ./internal/
+
+# Download dependencies and build for Linux ARM64 (Raspberry Pi)
+RUN go mod download && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o privacy-hub-backend cmd/main.go
+
+# Service installation stage
+FROM alpine:latest
+
+# Install basic utilities
+RUN apk --no-cache add bash
+
+# Create service directory
+RUN mkdir -p /opt/privacy-hub-backend
+
+# Copy binary from build stage
+COPY --from=builder /app/privacy-hub-backend /opt/privacy-hub-backend/
+
+# Copy service file
+COPY privacy-hub-backend.service /etc/systemd/system/
+
+# Make executable
+RUN chmod +x /opt/privacy-hub-backend/privacy-hub-backend
+
+# Create automated installation and management script
+COPY <<EOF /service-manager.sh
+#!/bin/bash
+set -e
+
+echo "🔨 Privacy Hub Backend Service Manager"
+echo "====================================="
+
+ACTION="\${1:-install}"
+
+echo "Action: \$ACTION"
+
+if [ "\$ACTION" = "install" ]; then
+    echo "📦 Installing/updating service..."
+    
+    # Copy binary to host if volume is mounted
+    if [ -d "/host/opt" ]; then
+        echo "📁 Copying binary to host..."
+        mkdir -p /host/opt/privacy-hub-backend
+        cp /opt/privacy-hub-backend/privacy-hub-backend /host/opt/privacy-hub-backend/
+        chmod +x /host/opt/privacy-hub-backend/privacy-hub-backend
+    fi
+    
+    # Copy service file to host if volume is mounted
+    if [ -d "/host/etc/systemd/system" ]; then
+        echo "📄 Installing systemd service..."
+        cp /etc/systemd/system/privacy-hub-backend.service /host/etc/systemd/system/
+    fi
+    
+    # Use host systemctl directly
+    if [ -f "/host/usr/bin/systemctl" ]; then
+        echo "🔄 Reloading systemd..."
+        /host/usr/bin/systemctl daemon-reload
+        
+        echo "✅ Enabling service..."
+        /host/usr/bin/systemctl enable privacy-hub-backend.service
+        
+        echo "🚀 Starting service..."
+        /host/usr/bin/systemctl restart privacy-hub-backend.service
+        
+        echo "📊 Service status:"
+        /host/usr/bin/systemctl status privacy-hub-backend.service --no-pager -l || true
+    fi
+elif [ "\$ACTION" = "status" ]; then
+    if [ -f "/host/usr/bin/systemctl" ]; then
+        echo "📊 Service status:"
+        /host/usr/bin/systemctl status privacy-hub-backend.service --no-pager -l || true
+    fi
+elif [ "\$ACTION" = "stop" ]; then
+    if [ -f "/host/usr/bin/systemctl" ]; then
+        echo "🛑 Stopping service..."
+        /host/usr/bin/systemctl stop privacy-hub-backend.service
+        echo "✅ Service stopped"
+    fi
+elif [ "\$ACTION" = "restart" ]; then
+    if [ -f "/host/usr/bin/systemctl" ]; then
+        echo "🔄 Restarting service..."
+        /host/usr/bin/systemctl restart privacy-hub-backend.service
+        echo "✅ Service restarted"
+    fi
+else
+    echo "Usage: \$0 {install|status|stop|restart}"
+    echo "  install  - Install/update and start the service"
+    echo "  status   - Check service status"
+    echo "  stop     - Stop the service"
+    echo "  restart  - Restart the service"
+    exit 1
+fi
+
+echo "✅ Operation completed!"
+EOF
+
+RUN chmod +x /service-manager.sh
+
+# Default command - install and start the service
+CMD ["/service-manager.sh", "install"]

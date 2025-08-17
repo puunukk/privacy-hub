@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -25,13 +26,15 @@ func Commands(w http.ResponseWriter, r *http.Request) {
 		response.Status = "shutdown_initiated"
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(response)
-		exec.Command("shutdown", "-h", "+1").Run() // 1 MINUTE delay
+		cmd := exec.Command("systemctl", "--host", "poweroff", "now")
+		cmd.Run() // Host system shutdown
 		
 	case "restart":
 		response.Status = "restart_initiated"
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(response)
-		exec.Command("shutdown", "-r", "+1").Run() // 1 MINUTE delay
+		cmd := exec.Command("systemctl", "--host", "reboot", "now")
+		cmd.Run() // Host system restart
 		
 	case "force-shutdown":
 		response.Status = "force_shutdown_initiated"
