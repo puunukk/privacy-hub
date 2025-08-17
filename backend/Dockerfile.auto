@@ -9,8 +9,7 @@ COPY cmd/ ./cmd/
 COPY internal/ ./internal/
 
 # Download dependencies and build for Linux ARM64 (Raspberry Pi)
-RUN go mod download && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o privacy-hub-backend cmd/main.go
+RUN go mod download && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o privacy-hub-backend cmd/main.go
 
 # Service installation stage
 FROM alpine:latest
