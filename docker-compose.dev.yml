@@ -101,6 +101,9 @@ services:
     hostname: backend
     privileged: true
     volumes:
+      - /opt:/host/opt
+      - /etc/systemd/system:/host/etc/systemd/system
+      - /usr/bin/systemctl:/host/usr/bin/systemctl
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /etc:/host/etc:ro
@@ -125,7 +128,8 @@ services:
       - "80:80" # HTTP
       - "443:443" # HTTPS
     volumes:
-      - './nginx/nginx.prod.conf:/etc/nginx/nginx.conf' # Use prod config as the active nginx.conf
+      # - './nginx/nginx.prod.conf:/etc/nginx/nginx.conf' # Use prod config as the active nginx.conf
+      - './nginx/nginx.dev.conf:/etc/nginx/nginx.conf' # Use dev config for development
       - './certs:/etc/nginx/ssl'
       # CRITICAL: Same volume that frontend builds into
       - 'frontend_dist:/usr/share/nginx/html:ro' # Read static files
