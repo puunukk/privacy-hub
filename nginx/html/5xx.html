@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Unavailable | Privacy Hub</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            padding: 40px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin: 0 0 10px 0;
+            font-weight: 300;
+        }
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .status {
+            margin: 30px 0;
+        }
+        .service {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .service-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: pulse 2s infinite;
+        }
+        .status-indicator.checking {
+            background: #f59e0b;
+        }
+        .status-indicator.online {
+            background: #10b981;
+            animation: none;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        p {
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+        .refresh-info {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-top: 30px;
+        }
+    </style>
+    <script>
+        // Auto-refresh every 5 seconds
+        setTimeout(() => location.reload(), 5000);
+        
+        // Check service availability
+        async function checkServices() {
+            const services = [
+                {name: "Backend API", url: "/api/pi-system/health", element: "backend"},
+                {name: "Docker Management", url: "/api/docker/version", element: "docker"}, 
+                {name: "Pi-hole DNS", url: "/api/stats", element: "pihole"},
+                {name: "Frontend Dashboard", url: "/dashboard", element: "frontend"}
+            ];
+            
+            for(const service of services) {
+                const indicator = document.getElementById(service.element);
+                if (!indicator) continue;
+                
+                indicator.className = 'status-indicator checking';
+                
+                try {
+                    const response = await fetch(service.url, {
+                        timeout: 3000,
+                        method: 'HEAD'
+                    });
+                    if(response.ok) {
+                        indicator.className = 'status-indicator online';
+                    }
+                } catch(e) {
+                    indicator.className = 'status-indicator';
+                }
+            }
+        }
+        
+        // Start checking immediately and every 3 seconds
+        document.addEventListener('DOMContentLoaded', () => {
+            checkServices();
+            setInterval(checkServices, 3000);
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>🍓 Privacy Hub</h1>
+        <div class="spinner"></div>
+        <h2>Services are starting up...</h2>
+        <p>One or more services are currently unavailable. Please wait while they initialize.</p>
+        
+        <div class="status">
+            <div class="service">
+                <div class="service-name">
+                    <span>🔧</span>
+                    <span>Backend API</span>
+                </div>
+                <div id="backend" class="status-indicator"></div>
+            </div>
+            <div class="service">
+                <div class="service-name">
+                    <span>🐳</span>
+                    <span>Docker Management</span>
+                </div>
+                <div id="docker" class="status-indicator"></div>
+            </div>
+            <div class="service">
+                <div class="service-name">
+                    <span>🛡️</span>
+                    <span>Pi-hole DNS</span>
+                </div>
+                <div id="pihole" class="status-indicator"></div>
+            </div>
+            <div class="service">
+                <div class="service-name">
+                    <span>📊</span>
+                    <span>Frontend Dashboard</span>
+                </div>
+                <div id="frontend" class="status-indicator"></div>
+            </div>
+        </div>
+        
+        <div class="refresh-info">
+            <p><small>Auto-refreshing every 5 seconds...</small></p>
+        </div>
+    </div>
+</body>
+</html>

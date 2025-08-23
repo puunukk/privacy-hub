@@ -1,7 +1,7 @@
 import { createRef, PureComponent } from 'react'
 import type { RefObject, ReactNode } from 'react'
 
-import { cn } from '../../utils/cn'
+import { cn } from '@/utils/cn'
 
 interface DropdownItem {
     id: string

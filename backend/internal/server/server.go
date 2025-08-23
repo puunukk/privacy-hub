@@ -36,6 +36,7 @@ func (s *Server) setupRoutes() {
 	
 	// Command endpoints
 	s.mux.Handle("/cmd/", api(http.HandlerFunc(handlers.Commands)))
+	//s.mux.Handle("/power/", api(http.HandlerFunc(handlers.PowerCommands)))
 	
 	// Debug endpoint (shows platform detection info)
 	s.mux.Handle("/debug", api(http.HandlerFunc(handlers.Debug)))

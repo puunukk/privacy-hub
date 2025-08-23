@@ -1,124 +1,130 @@
+# Privacy Hub for Windows
+# Minimal setup: SearXNG + Pi-hole + NGINX in containers
+# No backend or frontend - just the core privacy services
+version: '3.9'
+
+# Named volumes for Windows data persistence
+volumes:
+  pihole_data:
+  pihole_dnsmasq:
+  searxng_data:
+  redis_data:
+
+# Simple network for Windows
+networks:
+  privacy_hub:
+    driver: bridge
+
 services:
-  # Pi-hole - INTERNAL ONLY (no exposed ports)
-  pihole:
-    build: ./pihole
-    container_name: pihole
-    hostname: pihole
-    # NO PORTS EXPOSED TO HOST - only internal
-    environment:
-      TZ: ${TZ:-Europe/Tallinn}
-      WEBPASSWORD: ${PIHOLE_PASSWORD:-secure123}
-      FTLCONF_LOCAL_IPV4: ${SERVER_IP}
-      PIHOLE_DNS_: '1.1.1.1;1.0.0.1'
-      VIRTUAL_HOST: ${HOSTNAME:-otsi}.${LOCAL_DOMAIN:-local}
+  # Redis for SearXNG performance
+  redis:
+    image: redis:7-alpine
+    container_name: ${REDIS_CONTAINER_NAME:-privacy_hub_redis}
+    restart: unless-stopped
+    networks:
+      - privacy_hub
     volumes:
-      - './pihole/data:/etc/pihole'
-      - './pihole/dnsmasq:/etc/dnsmasq.d'
+      - redis_data:/data
+    tmpfs:
+      - /tmp
+    logging:
+      driver: "local"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Pi-hole DNS filtering
+  pihole:
+    build: 
+      context: ./pihole
+      dockerfile: Dockerfile
+    container_name: ${PIHOLE_CONTAINER_NAME:-privacy_hub_pihole}
+    hostname: ${PIHOLE_CONTAINER_NAME:-privacy_hub_pihole}
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-America/New_York}
+      WEBPASSWORD: ${PIHOLE_PASSWORD:-admin}
+      FTLCONF_LOCAL_IPV4: ${SERVER_IP:-192.168.1.100}
+      PIHOLE_DNS_: ${PIHOLE_DNS:-1.1.1.1;8.8.8.8}
+      VIRTUAL_HOST: ${DOMAIN_NAME:-pihole.local}
+      DNSMASQ_USER: root
+    volumes:
+      - pihole_data:/etc/pihole
+      - pihole_dnsmasq:/etc/dnsmasq.d
     tmpfs:
       - /var/log
       - /tmp
     cap_add:
       - NET_ADMIN
-    restart: unless-stopped
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost/api.php?version"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 5
+      - NET_RAW
     networks:
-      - internal
+      - privacy_hub
 
-  # SearXNG - INTERNAL ONLY (no exposed ports)  
+  # SearXNG private search engine
   searxng:
-    build: ./searxng
-    container_name: searxng
-    hostname: searxng
-    # NO PORTS EXPOSED TO HOST - only internal
+    image: searxng/searxng:latest
+    container_name: ${SEARXNG_CONTAINER_NAME:-privacy_hub_searxng}
+    hostname: ${SEARXNG_CONTAINER_NAME:-privacy_hub_searxng}
+    restart: unless-stopped
     environment:
-      - SEARXNG_BASE_URL=https://${SERVER_IP}/
-      - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY:-auto-generated}
+      - SEARXNG_BASE_URL=https://${DOMAIN_NAME:-privacy-hub.local}/
+      - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY:-windows-secret-key}
       - SEARXNG_DEFAULT_THEME=${SEARXNG_DEFAULT_THEME:-simple}
       - SEARXNG_SAFE_SEARCH=${SEARXNG_SAFE_SEARCH:-1}
       - SEARXNG_DEFAULT_LANG=${SEARXNG_DEFAULT_LANG:-en}
+      - UWSGI_WORKERS=${SEARXNG_WORKERS:-2}
+      - UWSGI_THREADS=${SEARXNG_THREADS:-2}
     volumes:
-      - './searxng/data:/etc/searxng'
+      - searxng_data:/etc/searxng:rw
     tmpfs:
-      - /var/log
       - /tmp
       - /var/cache
-    restart: unless-stopped
+    depends_on:
+      - redis
     networks:
-      - internal
+      - privacy_hub
 
-  # NEW: Docker API Proxy - secure Docker socket access
-  docker-proxy:
-    image: tecnativa/docker-socket-proxy:latest
-    container_name: docker-proxy
-    hostname: docker-proxy
-    # NO PORTS EXPOSED - internal only
-    environment:
-      # Minimal permissions for security
-      CONTAINERS: 1
-      IMAGES: 1
-      INFO: 1
-      NETWORKS: 0
-      VOLUMES: 0
-      SERVICES: 0
-      TASKS: 0
-      SECRETS: 0
-      POST: 1  # Allow start/stop/restart only
-      LOG_LEVEL: info
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    restart: unless-stopped
-    networks:
-      - internal
-
-  # Frontend container for Windows development with hot reload
-  frontend:
-    build: 
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    container_name: frontend
-    hostname: frontend
-    ports:
-      - "3000:3000"  # EXPOSE for development - direct access to React dev server
-    environment:
-      - NODE_ENV=development
-      - CHOKIDAR_USEPOLLING=true  # For Windows file watching
-      - DOCKER_ENV=true  # For Docker to proxy to backend
-    volumes:
-      # Mount source for hot reload - container rebuilds on changes
-      - './frontend:/app'
-      - '/app/node_modules'  # Prevent node_modules conflicts
-    command: sh -c "npm install && npm run dev"
-    restart: unless-stopped
-    networks:
-      - internal
-
-  # NGINX - ONLY PUBLIC-FACING SERVICE
+  # NGINX - Single entry point for Windows users
   nginx:
-    build: ./nginx
-    container_name: nginx
-    hostname: nginx
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: ${NGINX_CONTAINER_NAME:-privacy_hub_nginx}
+    hostname: ${NGINX_CONTAINER_NAME:-privacy_hub_nginx}
     ports:
-      # ONLY these ports exposed to network (same as production)
-      - "53:53/tcp"      # DNS
-      - "53:53/udp"      # DNS  
-      - "80:80"          # HTTP
-      - "443:443"        # HTTPS
+      - "53:53/tcp"   # DNS
+      - "53:53/udp"   # DNS  
+      - "80:80"       # HTTP
+      - "443:443"     # HTTPS
     volumes:
       - './nginx/ssl:/etc/nginx/ssl'
+      - './nginx/nginx.conf:/etc/nginx/nginx.conf' # Simple NGINX config
     tmpfs:
       - /var/log/nginx
       - /tmp
     restart: unless-stopped
-    # Remove dependencies - nginx should start independently
-    # depends_on:
+    depends_on:
+      - pihole
+      - searxng
     networks:
-      - internal
+      - privacy_hub
 
-networks:
-  internal:
-    driver: bridge
-    # No need to specify IP ranges - Docker handles it
+# Windows Usage:
+#
+# 1. Configure environment:
+#    cp .env.example .env
+#    # Edit SERVER_IP to your Windows machine's IP
+#
+# 2. Start services:
+#    docker-compose -f docker-compose.windows.yml up -d
+#
+# 3. Access services:
+#    - Private Search: https://localhost/
+#    - Pi-hole Admin: https://localhost/admin
+#    - Health Check: https://localhost/health
+#
+# 4. Configure DNS (optional):
+#    Set your router's DNS to your Windows machine's IP address
+#    Or manually set DNS on individual devices
+#
+# This configuration provides core privacy services without Pi-specific features

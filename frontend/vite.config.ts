@@ -32,8 +32,7 @@ export default defineConfig({
       { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
     ],
   },
-  // Use root base so assets resolve from /assets regardless of subpath like /dashboard or /home
-  // base: '/',
+  // Serve everything from /dashboard/ path for NGINX routing
   base: '/dashboard/',
   define: {
     // Inject version information at build time
@@ -57,16 +56,34 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: process.env.VITE_PORT ? parseInt(process.env.VITE_PORT) : 3000,
-    strictPort: false,  // Allow Vite to find another port if specified port is busy
-    allowedHosts: 'all',  // Allow nginx to proxy from "frontend" hostname
+    port: 3000,
+    strictPort: true,  // Must use port 3000 for Docker
+    hmr: false, // Disable HMR entirely in development to avoid WebSocket issues
+    allowedHosts: [
+      'all',
+      'otsi',
+      'otsi.local',
+      'localhost',
+      '192.168.1.120',
+    ],  // Allow all hosts in development
     watch: {
-      usePolling: process.env.CHOKIDAR_USEPOLLING === 'true' || process.env.DOCKER_ENV === 'true'  // For Docker volume mounts and file watching
+      usePolling: true,  // Required for Docker volume mounts
+      interval: 1000     // Check for changes every second
     },
-    // Proxy Docker API for container management (needed for dashboard functionality)
+    // Proxy API requests to backend services
     proxy: {
+      '/api/pi-system': {
+        target: 'http://go_backend:8111',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/pi-system/, ''),
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('Backend API proxy error:', err.message);
+          });
+        }
+      },
       '/api/docker': {
-        target: process.env.DOCKER_PROXY_URL || 'http://docker-proxy:2375',
+        target: 'http://docker-proxy:2375',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/docker/, ''),
         configure: (proxy, options) => {

@@ -1,0 +1,47 @@
+# NGINX Production Container
+# Purpose: Production environment serving static frontend files
+# Used by: docker-compose.pi-prod.yml
+# Features: Static file serving, full SSL, security headers, performance optimizations
+
+FROM nginx:alpine
+
+# Install curl and other production utilities
+RUN apk add --no-cache curl gzip brotli
+
+# Copy production-specific configuration
+COPY configs/production.conf /etc/nginx/nginx.conf
+
+# Copy SSL certificates for production
+COPY ssl/ /etc/nginx/ssl/
+
+# Create directory for static files
+RUN mkdir -p /var/www/privacy-hub
+
+# Copy built frontend files (if available)
+# This will be populated by build process or volume mount
+COPY --from=frontend /app/dist /var/www/privacy-hub/ 2>/dev/null || true
+
+# nginx user already exists in nginx:alpine base image
+# Set proper ownership of directories
+RUN chown -R nginx:nginx /var/cache/nginx /var/log/nginx /var/www/privacy-hub
+
+# Production optimizations
+RUN echo 'worker_rlimit_nofile 65535;' >> /etc/nginx/nginx.conf
+
+# Security hardening
+RUN rm -rf /etc/nginx/conf.d/default.conf && \
+    touch /var/run/nginx.pid && \
+    chown nginx:nginx /var/run/nginx.pid
+
+# Health check for production
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost/health || exit 1
+
+# Expose ports
+EXPOSE 80 443 53
+
+# Use non-root user
+USER nginx
+
+# Start nginx in foreground
+CMD ["nginx", "-g", "daemon off;"]

@@ -5,6 +5,7 @@ export enum AppConfigActionTypes {
     SHOW_NOTIFICATION = 'SHOW_NOTIFICATION',
     HIDE_NOTIFICATION = 'HIDE_NOTIFICATION',
     SET_APP_STATUS = 'SET_APP_STATUS',
+    SET_POLLING_INTERVALS = 'SET_POLLING_INTERVALS',
 }
 
 // App Status Enum - simplified state management
@@ -28,6 +29,13 @@ export interface Notification {
     duration?: number
 }
 
+// Polling intervals configuration
+export interface PollingIntervals {
+    containers: number      // Container data polling (default: 15s)
+    metrics: number        // System metrics polling (default: 30s) 
+    systemInfo: number     // System info polling (default: 60s)
+}
+
 // App Config State
 export interface AppConfigState {
     status: ApplicationStatus
@@ -35,4 +43,5 @@ export interface AppConfigState {
     theme: Theme
     notifications: Notification[]
     error: string | null
+    pollingIntervals: PollingIntervals
 }

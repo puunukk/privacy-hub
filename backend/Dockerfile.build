@@ -1,25 +1,76 @@
-# Build stage for Linux service
+# Multi-stage build for Privacy Hub Go Backend
+# Builds optimized binary for production deployment
 FROM golang:1.25-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates tzdata
 
 WORKDIR /app
 
-# Copy go files
+# Copy go module files first for better Docker layer caching
 COPY go.mod ./
+# Copy go.sum only if it exists
+COPY go.su[m] ./
+
+# Download dependencies (cached if go.mod unchanged)
+RUN go mod download
+
+# Copy source code
 COPY cmd/ ./cmd/
 COPY internal/ ./internal/
 
-# Download dependencies and build for Linux ARM64 (Raspberry Pi)
-RUN go mod download && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o privacy-hub-backend cmd/main.go
+# Set build arguments for flexible target architecture
+ARG TARGETOS=linux
+ARG TARGETARCH=arm64
+ARG CGO_ENABLED=0
 
-# Simple runtime stage that just holds the binary
-FROM alpine:latest
+# Build metadata that can be injected at build time
+ARG VERSION=1.0.0
+ARG BUILD_TIME
+ARG GIT_COMMIT
 
-# Copy binary from build stage
-COPY --from=builder /app/privacy-hub-backend /privacy-hub-backend
+# Build the application with optimizations
+RUN CGO_ENABLED=${CGO_ENABLED} GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -ldflags="-w -s -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.GitCommit=${GIT_COMMIT}" \
+    -o privacy-hub-backend cmd/main.go
 
-# Make executable
-RUN chmod +x /privacy-hub-backend
+# Verify the binary was created and is executable
+RUN chmod +x privacy-hub-backend && ls -la privacy-hub-backend && echo "Binary built successfully"
 
-# Just keep the container running with the binary available
-CMD ["sleep", "infinity"]
+# Final stage - minimal runtime with just the binary
+FROM alpine:latest AS binary
+
+# Install runtime dependencies for system monitoring
+RUN apk add --no-cache ca-certificates tzdata && \
+    addgroup -g 1001 -S appuser && \
+    adduser -u 1001 -S appuser -G appuser
+
+# Copy binary from builder stage
+COPY --from=builder /app/privacy-hub-backend /usr/local/bin/privacy-hub-backend
+
+# Set ownership and permissions
+RUN chown appuser:appuser /usr/local/bin/privacy-hub-backend && \
+    chmod +x /usr/local/bin/privacy-hub-backend
+
+# Create directory for data and logs (if needed)
+RUN mkdir -p /app/data /app/logs && \
+    chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Set working directory
+WORKDIR /app
+
+# Environment variables with secure defaults
+ENV GO_ENV=production \
+    SERVER_HOST=0.0.0.0 \
+    SERVER_PORT=8111 \
+    PI_MODE=true
+
+# Health check for container orchestration
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --quiet --tries=1 --spider http://localhost:${SERVER_PORT}/health || exit 1
+
+# Default command runs the binary
+CMD ["privacy-hub-backend"]

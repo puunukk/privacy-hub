@@ -14,11 +14,13 @@ import { ContainerActionTypes } from '@/store/docker/types'
 import { calculateCpuPercent } from '@/utils/calculateCpuPercent'
 import { calculateMemoryPercent } from '@/utils/calculateMemoryPercent'
 import { formatBytes } from '@/utils/formatBytes'
+import { logger } from '@/utils/logger'
 import type { ContainerWithStats } from './types'
 
 // Main Docker data loading saga
 function* loadDockerDataSaga(): Generator<any, void, any> {
-    console.log('loadDockerDataSaga started')
+    logger.debug('loadDockerDataSaga started')
+    logger.time('Docker data fetch')
 
     try {
         yield put(setLoadingStatus(true))
@@ -29,7 +31,7 @@ function* loadDockerDataSaga(): Generator<any, void, any> {
             call(fetchDockerInfo),
         ])
 
-        console.log('Docker data received - containers:', containers?.length, 'dockerInfo:', dockerInfo)
+        logger.debug('Docker data received', { containerCount: containers?.length, hasDockerInfo: !!dockerInfo })
 
         // Fetch stats for running containers
         const containersWithStats: ContainerWithStats[] = yield all(
@@ -37,7 +39,7 @@ function* loadDockerDataSaga(): Generator<any, void, any> {
                 if (container.State === 'running') {
                     try {
                         const stats: any = yield call(fetchContainerStats, container.Id)
-                        console.log('Container stats for', container.Names[0], stats)
+                        logger.debug('Container stats fetched', { name: container.Names[0], hasStats: !!stats })
 
                         if (stats) {
                             const cpuPercent = calculateCpuPercent(stats)
@@ -53,7 +55,12 @@ function* loadDockerDataSaga(): Generator<any, void, any> {
                                 memUsage = memStats.anon || memStats.active_anon || memStats.file || 0
                             }
 
-                            console.log('Calculated stats:', { cpuPercent, memPercent, memUsage, rawMemStats: stats.memory_stats })
+                            logger.debug('Calculated container stats', { 
+                                name: container.Names[0], 
+                                cpuPercent, 
+                                memPercent, 
+                                memUsage: formatBytes(memUsage) 
+                            })
 
                             return {
                                 ...container,
@@ -62,7 +69,7 @@ function* loadDockerDataSaga(): Generator<any, void, any> {
                             }
                         }
                     } catch (error) {
-                        console.error('Stats fetch failed for', container.Names[0], error)
+                        logger.debug('Stats fetch failed for container:', container.Names[0], error)
                     }
                 }
                 return container
@@ -79,15 +86,21 @@ function* loadDockerDataSaga(): Generator<any, void, any> {
         // Consider connected if we got any data, even if partial
         const isConnected = containersWithStats.length > 0 || dockerInfo !== null
         yield put(setConnectionStatus({ isConnected }))
-        yield put(setLoadingStatus(false))
+        
+        logger.debug('Docker data loading completed', { containerCount: containersWithStats.length, isConnected })
+        logger.timeEnd('Docker data fetch')
 
-    } catch (error) {
-        console.error('loadDockerDataSaga error:', error)
+    }
+    catch (error) {
+        logger.error('loadDockerDataSaga error:', error)
+        logger.timeEnd('Docker data fetch')
         const timestamp = Date.now()
 
         // Still provide empty containers array for UI to work
         yield put(fetchContainersSuccess({ containers: [], timestamp }))
         yield put(setConnectionStatus({ isConnected: false }))
+    }
+    finally {
         yield put(setLoadingStatus(false))
     }
 }
@@ -118,7 +131,7 @@ function* autoRefreshSaga(): Generator {
 
 // Main Docker saga that orchestrates everything
 export default function* dockerSaga(): Generator {
-    console.log('dockerSaga started')
+    logger.info('dockerSaga started')
 
     // Fork the watchers - they will run concurrently
     yield fork(watchLoadDockerData)

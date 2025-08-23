@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
-    "dev:port": "vite --host 0.0.0.0 --port",
+    "dev": "vite --host 0.0.0.0 --port 3000",
+    "dev:debug": "vite --host 0.0.0.0 --port 3000 --debug",
     "build": "tsc && vite build",
     "build:watch": "tsc && vite build --watch",
-    "preview": "vite preview",
+    "preview": "vite preview --host 0.0.0.0 --port 3000",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

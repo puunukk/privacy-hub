@@ -1,5 +1,6 @@
-import { BaseTypography, type BaseTypographyProps } from './Typography'
-import { cn } from '../../../utils/cn'
+import { } from 'react'
+import { getCommonTypographyClasses, type BaseTypographyProps } from './Typography'
+import { cn } from '@/utils/cn'
 
 interface TextProps extends BaseTypographyProps {
     size?: 'xs' | 'sm' | 'base' | 'lg'
@@ -13,20 +14,20 @@ const textSizeClasses = {
     lg: 'text-lg'
 }
 
-export class Text extends BaseTypography<TextProps> {
-    render() {
-        const { size = 'sm', as = 'span', children } = this.props
-        const Component = as
+export const Text = ({ size = 'sm', as = 'span', children, color, weight, align, className, ...props }: TextProps) => {
+  const Component = as
 
-        const classes = cn(
-            textSizeClasses[size],
-            this.getCommonClasses()
-        )
+  const classes = cn(
+    textSizeClasses[size],
+    'transition-colors duration-200',
+    getCommonTypographyClasses(color, weight, align, className)
+  )
 
-        return (
-            <Component className={classes}>
-                {children}
-            </Component>
-        )
-    }
+  return (
+    <Component className={classes} {...props}>
+      {children}
+    </Component>
+  )
 }
+
+Text.displayName = 'Text'

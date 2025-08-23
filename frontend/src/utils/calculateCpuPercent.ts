@@ -1,4 +1,4 @@
-import type { ContainerStats } from '../types/docker'
+import type { ContainerStats } from '@/types/docker'
 
 export const calculateCpuPercent = (stats: ContainerStats): number => {
     const { cpu_stats, precpu_stats } = stats

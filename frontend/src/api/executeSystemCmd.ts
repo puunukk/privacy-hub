@@ -1,9 +1,9 @@
 import { apiClient } from '@/api/apiClient'
 
-const endpoint = '/api/pi-system/cmd'
+const endpoint = '/api/pi-system/'
 
 export async function executeSystemCmd(command: string): Promise<void> {
-    const response = await apiClient(`${endpoint}/${command}`, {
+    const response = await apiClient(`${endpoint}cmd/${command}`, {
         method: 'POST'
     })
 

@@ -3,14 +3,13 @@ import { connect } from 'react-redux'
 import { Dispatch } from '@reduxjs/toolkit'
 import { Sun, Moon, Monitor, Settings } from 'lucide-react'
 
-import { Button } from '../components/ui/Button'
-import { Dropdown } from '../components/ui/Dropdown'
-import { SystemActionsModal } from '../components/ui/Modal'
-import { Typography } from '../components/ui/Typography'
-import CpuTemperature from '../components/CpuTemperature'
-import { SystemActionTypes } from '../sagas/system/types'
-import type { RootState } from '../store'
-import { cn } from '../utils/cn'
+import { Button } from '@/components/ui/Button'
+import { Dropdown } from '@/components/ui/Dropdown'
+import SystemActionsModal from './SystemActionsModal'
+import { Typography } from '@/components/ui/Typography'
+import { CpuTemperature } from '@/components/shared'
+import type { RootState } from '@/store'
+import { cn } from '@/utils/cn'
 
 interface HeaderProps {
   isLoading: boolean
@@ -41,23 +40,6 @@ class Header extends Component<HeaderProps, HeaderState> {
     this.setState({ showSystemActionsModal: false })
   }
 
-  handleShutdown = () => {
-    const { dispatch } = this.props
-    dispatch({ type: SystemActionTypes.SYSTEM_SHUTDOWN_REQUEST, payload: { command: 'shutdown' } })
-    this.hideSystemActionsModal()
-  }
-
-  handleReboot = () => {
-    const { dispatch } = this.props
-    dispatch({ type: SystemActionTypes.SYSTEM_REBOOT_REQUEST, payload: { command: 'restart' } })
-    this.hideSystemActionsModal()
-  }
-
-  handleForceShutdown = () => {
-    const { dispatch } = this.props
-    dispatch({ type: SystemActionTypes.SYSTEM_FORCE_SHUTDOWN_REQUEST, payload: { command: 'force-shutdown' } })
-    this.hideSystemActionsModal()
-  }
 
   setTheme = (theme: 'light' | 'dark' | 'auto') => {
     const { dispatch } = this.props
@@ -163,9 +145,6 @@ class Header extends Component<HeaderProps, HeaderState> {
         <SystemActionsModal
           isOpen={showSystemActionsModal}
           onClose={this.hideSystemActionsModal}
-          onShutdown={this.handleShutdown}
-          onReboot={this.handleReboot}
-          onForceShutdown={this.handleForceShutdown}
           isLoading={isLoading}
         />
       </>

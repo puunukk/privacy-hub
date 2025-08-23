@@ -25,9 +25,7 @@ func Metrics(w http.ResponseWriter, r *http.Request) {
 	
 	response := models.MetricsResponse{
 		CPUTemp:     systemSvc.GetCPUTemp(),
-		MemoryFree:  memInfo.Free,
-		MemoryTotal: memInfo.Total,
-		MemoryUsed:  memInfo.Used,
+		Memory:      memInfo,
 		LoadAvg:     systemSvc.GetLoadAvg(),
 		Storage:     storageInfo,
 		Timestamp:   time.Now().Unix(),

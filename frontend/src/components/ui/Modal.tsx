@@ -1,8 +1,8 @@
-import { PureComponent, ReactNode } from 'react'
-import { X, AlertTriangle, Info, RotateCcw, Power, Zap } from 'lucide-react'
+import { ReactNode, Component } from 'react'
+import { X, AlertTriangle, Info } from 'lucide-react'
 import { Button } from './Button'
 import { Typography } from './Typography'
-import { cn } from '../../utils/cn'
+import { cn } from '@/utils/cn'
 
 interface ModalProps {
     isOpen: boolean
@@ -31,12 +31,13 @@ const modalSizes = {
 }
 
 const modalWrapperClasses = cn(
-    'fixed inset-0 z-50 overflow-y-auto'
+    'fixed inset-0 z-50 overflow-y-auto',
+    'animate-fade-in'
 )
 
 const modalBackdropClasses = cn(
     'fixed inset-0',
-    'bg-black/20 dark:bg-white/20 backdrop-blur-md transition-opacity'
+    'bg-black/30 dark:bg-black/50 backdrop-blur-sm transition-all duration-300'
 )
 
 const modalContainerClasses = cn(
@@ -46,8 +47,9 @@ const modalContainerClasses = cn(
 const modalContentClasses = cn(
     'relative w-full',
     'bg-white dark:bg-gray-800',
-    'rounded-lg shadow-xl',
-    'transform transition-all'
+    'rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700',
+    'transform transition-all duration-300',
+    'animate-scale-in'
 )
 
 const modalHeaderClasses = cn(
@@ -59,256 +61,166 @@ const modalBodyClasses = cn(
     'p-4'
 )
 
-export class Modal extends PureComponent<ModalProps> {
-    render() {
-        const { isOpen, onClose, title, children, size = 'md' } = this.props
+export class Modal extends Component<ModalProps> {
+  componentDidMount() {
+    if (this.props.isOpen) {
+      document.addEventListener('keydown', this.handleEscape);
+      document.body.style.overflow = 'hidden';
+    }
+  }
 
-        if (!isOpen) return null
+  componentDidUpdate(prevProps: ModalProps) {
+    if (this.props.isOpen && !prevProps.isOpen) {
+      document.addEventListener('keydown', this.handleEscape);
+      document.body.style.overflow = 'hidden';
+    } else if (!this.props.isOpen && prevProps.isOpen) {
+      document.removeEventListener('keydown', this.handleEscape);
+      document.body.style.overflow = 'unset';
+    }
+  }
 
-        return (
-            <div className={modalWrapperClasses}>
-                <div className={modalBackdropClasses} onClick={onClose} />
+  componentWillUnmount() {
+    document.removeEventListener('keydown', this.handleEscape);
+    document.body.style.overflow = 'unset';
+  }
 
-                <div className={modalContainerClasses}>
-                    <div className={cn(modalContentClasses, modalSizes[size])}>
-                        <div className={modalHeaderClasses}>
-                            <Typography.Title level={4} color="primary">
-                                {title}
-                            </Typography.Title>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={onClose}
-                                className="!p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                            >
-                                <X className="h-5 w-5" />
-                            </Button>
-                        </div>
+  handleEscape = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      this.props.onClose();
+    }
+  }
 
-                        <div className={modalBodyClasses}>
-                            {children}
-                        </div>
-                    </div>
-                </div>
+  render() {
+    const { isOpen, onClose, title, children, size = 'md' } = this.props;
+
+    if (!isOpen) return null;
+
+    return (
+      <div className={modalWrapperClasses}>
+        <div 
+          className={modalBackdropClasses} 
+          onClick={onClose}
+          aria-hidden="true"
+        />
+
+        <div className={modalContainerClasses}>
+          <div 
+            className={cn(modalContentClasses, modalSizes[size])}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+          >
+            <div className={modalHeaderClasses}>
+              <Typography.Title level={4} color="primary" className="pr-8">
+                {title}
+              </Typography.Title>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="absolute top-4 right-4 !p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors duration-200"
+                aria-label="Close modal"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
-        )
-    }
+
+            <div className={modalBodyClasses}>
+              {children}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 }
 
-export class ConfirmationModal extends PureComponent<ConfirmationModalProps> {
-    private getVariantIcon = () => {
-        const { variant = 'info' } = this.props
-        switch (variant) {
-            case 'danger':
-                return <AlertTriangle className="h-6 w-6" />
-            case 'warning':
-                return <AlertTriangle className="h-6 w-6" />
-            default:
-                return <Info className="h-6 w-6" />
-        }
-    }
-
-    private getVariantButtonType = () => {
-        const { variant = 'info' } = this.props
-        switch (variant) {
-            case 'danger':
-                return 'danger'
-            case 'warning':
-                return 'warning'
-            default:
-                return 'primary'
-        }
-    }
-
-    private getVariantColor = () => {
-        const { variant = 'info' } = this.props
-        switch (variant) {
-            case 'danger':
-                return 'danger'
-            case 'warning':
-                return 'warning'
-            default:
-                return 'info'
-        }
-    }
-
-    render() {
-        const {
-            isOpen,
-            onClose,
-            onConfirm,
-            title,
-            message,
-            confirmText = 'Confirm',
-            cancelText = 'Cancel',
-            isLoading = false
-        } = this.props
-
-        const contentClasses = cn('space-y-4')
-        const iconRowClasses = cn('flex items-start space-x-3')
-        const iconClasses = cn('flex-shrink-0')
-        const actionsClasses = cn('flex justify-end space-x-3 pt-4')
-
-        return (
-            <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
-                <div className={contentClasses}>
-                    <div className={iconRowClasses}>
-                        <div className={iconClasses}>
-                            <Typography.Text color={this.getVariantColor()}>
-                                {this.getVariantIcon()}
-                            </Typography.Text>
-                        </div>
-                        <div>
-                            <Typography.Title level={5} color={this.getVariantColor()}>
-                                {title}
-                            </Typography.Title>
-                            <Typography.Text size="sm" color="muted" className="mt-1">
-                                {message}
-                            </Typography.Text>
-                        </div>
-                    </div>
-
-                    <div className={actionsClasses}>
-                        <Button
-                            variant="secondary"
-                            onClick={onClose}
-                            disabled={isLoading}
-                        >
-                            {cancelText}
-                        </Button>
-                        <Button
-                            variant={this.getVariantButtonType() as any}
-                            onClick={onConfirm}
-                            disabled={isLoading}
-                        >
-                            {isLoading ? 'Processing...' : confirmText}
-                        </Button>
-                    </div>
-                </div>
-            </Modal>
-        )
-    }
+const getVariantIcon = (variant: ConfirmationModalProps['variant'] = 'info') => {
+  switch (variant) {
+    case 'danger':
+      return <AlertTriangle className="h-6 w-6" />
+    case 'warning':
+      return <AlertTriangle className="h-6 w-6" />
+    default:
+      return <Info className="h-6 w-6" />
+  }
 }
 
-// System Actions Modal - Contains action buttons inside
-interface SystemActionsModalProps {
-    isOpen: boolean
-    onClose: () => void
-    onShutdown: () => void
-    onReboot: () => void
-    onForceShutdown: () => void
-    isLoading?: boolean
+const getVariantButtonType = (variant: ConfirmationModalProps['variant'] = 'info') => {
+  switch (variant) {
+    case 'danger':
+      return 'danger'
+    case 'warning':
+      return 'warning'
+    default:
+      return 'primary'
+  }
 }
 
-export class SystemActionsModal extends PureComponent<SystemActionsModalProps> {
-    render() {
-        const {
-            isOpen,
-            onClose,
-            onShutdown,
-            onReboot,
-            onForceShutdown,
-            isLoading = false
-        } = this.props
+const getVariantColor = (variant: ConfirmationModalProps['variant'] = 'info') => {
+  switch (variant) {
+    case 'danger':
+      return 'danger'
+    case 'warning':
+      return 'warning'
+    default:
+      return 'info'
+  }
+}
 
-        const contentClasses = cn('space-y-4')
-        const buttonsClasses = cn('space-y-3')
-        const buttonContentClasses = cn('flex items-center space-x-3')
-        const buttonTextClasses = cn('text-left', 'flex flex-col')
-        const actionsClasses = cn('flex justify-end pt-4')
+export const ConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  variant = 'info',
+  isLoading = false
+}: ConfirmationModalProps) => {
+  const contentClasses = cn('space-y-4')
+  const iconRowClasses = cn('flex items-start space-x-3')
+  const iconClasses = cn('flex-shrink-0')
+  const actionsClasses = cn('flex justify-end space-x-3 pt-4')
 
-        return (
-            <Modal isOpen={isOpen} onClose={onClose} title="System Actions" size="sm">
-                <div className={contentClasses}>
-                    <Typography.Paragraph size="sm" color="muted">
-                        Choose a system action. These operations will affect the entire system.
-                    </Typography.Paragraph>
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
+      <div className={contentClasses}>
+        <div className={iconRowClasses}>
+          <div className={iconClasses}>
+            <Typography.Text color={getVariantColor(variant)}>
+              {getVariantIcon(variant)}
+            </Typography.Text>
+          </div>
+          <div className="flex-1">
+            <Typography.Title level={5} color={getVariantColor(variant)}>
+              {title}
+            </Typography.Title>
+            <Typography.Text size="sm" color="muted" className="mt-1 block">
+              {message}
+            </Typography.Text>
+          </div>
+        </div>
 
-                    <div className={buttonsClasses}>
-                        <Button
-                            variant="ghost"
-                            onClick={onReboot}
-                            disabled={isLoading}
-                            className={cn(
-                                "w-full justify-start p-4 h-auto",
-                                "border border-orange-200 dark:border-orange-800",
-                                "hover:border-orange-300 dark:hover:border-orange-700",
-                                "hover:bg-orange-50 dark:hover:bg-orange-900/20"
-                            )}
-                        >
-                            <div className={buttonContentClasses}>
-                                <RotateCcw className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                                <div className={buttonTextClasses}>
-                                    <Typography.Text size="base" weight="medium" color="primary">
-                                        Reboot System
-                                    </Typography.Text>
-                                    <Typography.Text size="xs" color="muted">
-                                        Restart the entire system gracefully
-                                    </Typography.Text>
-                                </div>
-                            </div>
-                        </Button>
-
-                        <Button
-                            variant="ghost"
-                            onClick={onShutdown}
-                            disabled={isLoading}
-                            className={cn(
-                                "w-full justify-start p-4 h-auto",
-                                "border border-red-200 dark:border-red-800",
-                                "hover:border-red-300 dark:hover:border-red-700",
-                                "hover:bg-red-50 dark:hover:bg-red-900/20"
-                            )}
-                        >
-                            <div className={buttonContentClasses}>
-                                <Power className="h-5 w-5 text-red-600 dark:text-red-400" />
-                                <div className={buttonTextClasses}>
-                                    <Typography.Text size="base" weight="medium" color="primary">
-                                        Shutdown System
-                                    </Typography.Text>
-                                    <Typography.Text size="xs" color="muted">
-                                        Power off the system gracefully
-                                    </Typography.Text>
-                                </div>
-                            </div>
-                        </Button>
-
-                        <Button
-                            variant="ghost"
-                            onClick={onForceShutdown}
-                            disabled={isLoading}
-                            className={cn(
-                                "w-full justify-start p-4 h-auto",
-                                "border border-red-300 dark:border-red-700",
-                                "hover:border-red-400 dark:hover:border-red-600",
-                                "hover:bg-red-100 dark:hover:bg-red-900/30"
-                            )}
-                        >
-                            <div className={buttonContentClasses}>
-                                <Zap className="h-5 w-5 text-red-700 dark:text-red-300" />
-                                <div className={buttonTextClasses}>
-                                    <Typography.Text size="base" weight="medium" color="danger">
-                                        Force Shutdown
-                                    </Typography.Text>
-                                    <Typography.Text size="xs" color="muted">
-                                        use only if normal shutdown fails
-                                    </Typography.Text>
-                                </div>
-                            </div>
-                        </Button>
-                    </div>
-
-                    <div className={actionsClasses}>
-                        <Button
-                            variant="secondary"
-                            onClick={onClose}
-                            disabled={isLoading}
-                        >
-                            Close
-                        </Button>
-                    </div>
-                </div>
-            </Modal>
-        )
-    }
+        <div className={actionsClasses}>
+          <Button
+            variant="secondary"
+            onClick={onClose}
+            disabled={isLoading}
+          >
+            {cancelText}
+          </Button>
+          <Button
+            variant={getVariantButtonType(variant) as any}
+            onClick={onConfirm}
+            disabled={isLoading}
+            className={isLoading ? 'animate-pulse-subtle' : ''}
+          >
+            {isLoading ? 'Processing...' : confirmText}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
 }

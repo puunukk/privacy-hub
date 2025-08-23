@@ -1,4 +1,4 @@
-import type { DockerContainer, ContainerAction } from '../../types/docker'
+import type { DockerContainer, ContainerAction } from '@/types/docker'
 
 // Action Types
 export enum ContainerActionTypes {

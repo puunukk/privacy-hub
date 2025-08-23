@@ -1,0 +1,149 @@
+version: '3.8'
+
+networks:
+  privacy_hub_external:
+    driver: bridge
+  privacy_hub_internal:
+    driver: bridge
+    internal: true
+
+volumes:
+  pihole_data:
+  pihole_dnsmasq:
+  searxng_data:
+  redis_data:
+  go_backend_data:
+
+
+services:
+  # Redis for SearXNG (OPTIONAL)
+  redis:
+    image: redis:7-alpine
+    container_name: privacy_hub_redis
+    restart: unless-stopped
+    networks:
+      - privacy_hub_internal
+    volumes:
+      - redis_data:/data
+      - ./logs/redis:/var/log/redis
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+    logging:
+      driver: "local"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # Pi-hole DNS filtering
+  pihole:
+    build: ./pihole
+    container_name: privacy_hub_pihole
+    restart: unless-stopped
+    networks:
+      - privacy_hub_external
+      - privacy_hub_internal
+    environment:
+      TZ: ${TZ:-Europe/Tallinn}
+      WEBPASSWORD: ${PIHOLE_PASSWORD:-secure123}
+      FTLCONF_webserver_api_password: ${PIHOLE_PASSWORD:-secure123}
+      FTLCONF_dns_listeningMode: 'all'
+      FTLCONF_LOCAL_IPV4: ${SERVER_IP}
+      PIHOLE_DNS_: '1.1.1.1;1.0.0.1'
+      VIRTUAL_HOST: ${HOSTNAME:-otsi}.${LOCAL_DOMAIN:-local}
+      DNSMASQ_USER: root
+    volumes:
+      - pihole_data:/etc/pihole
+      - pihole_dnsmasq:/etc/dnsmasq.d
+      - ./logs/pihole:/var/log/pihole
+    security_opt:
+      - no-new-privileges:false
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - CHOWN
+      - SETGID
+      - SETUID
+      - SETFCAP
+    # NO EXPOSED PORTS - Host NGINX connects via service name
+
+    # SearXNG search engine
+  searxng:
+    image: searxng/searxng:latest
+    container_name: privacy_hub_searxng
+    restart: unless-stopped
+    networks:
+      - privacy_hub_internal
+    environment:
+      - SEARXNG_BASE_URL=https://${DOMAIN_NAME:-privacy-hub.local}/
+      - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY:-auto-generated}
+      - SEARXNG_DEFAULT_THEME=${SEARXNG_DEFAULT_THEME:-simple}
+      - SEARXNG_SAFE_SEARCH=${SEARXNG_SAFE_SEARCH:-1}
+      - SEARXNG_DEFAULT_LANG=${SEARXNG_DEFAULT_LANG:-en}
+      - UWSGI_WORKERS=2
+      - UWSGI_THREADS=2
+    volumes:
+      - searxng_data:/etc/searxng:rw
+      - ./logs/searxng:/var/log/searxng
+      - './searxng/data:/etc/searxng'
+    depends_on:
+      - redis
+    # NO EXPOSED PORTS - Host NGINX connects via service name
+
+    # Go backend
+  go_backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: privacy_hub_go_backend
+    restart: unless-stopped
+    networks:
+      - privacy_hub_internal
+    environment:
+      - GO_ENV=production
+      - PI_MODE=true
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data/go-backend:/app/data
+      - ./logs/go-backend:/app/logs
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # NO EXPOSED PORTS - Host NGINX connects via service name
+
+    # Docker API Proxy - secure Docker socket access
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: privacy_hub_docker_proxy
+    restart: unless-stopped
+    networks:
+      - privacy_hub_internal
+    environment:
+      # Minimal permissions for security
+      CONTAINERS: 1
+      IMAGES: 1
+      INFO: 1
+      STATS: 1 # Enable container statistics (CPU/memory usage)
+      NETWORKS: 0
+      VOLUMES: 0
+      SERVICES: 0
+      TASKS: 0
+      SECRETS: 0
+      POST: 1 # Allow start/stop/restart only
+      LOG_LEVEL: info
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    # NO EXPOSED PORTS - Host NGINX connects via service name

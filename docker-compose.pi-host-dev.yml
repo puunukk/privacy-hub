@@ -1,0 +1,227 @@
+# Privacy Hub Pi Development with Host NGINX
+# Uses host NGINX for realistic production testing with development workflow
+# All containers + host NGINX + live frontend building
+version: '3.9'
+
+# Named volumes for Pi host development
+volumes:
+  pihole_data:
+  pihole_dnsmasq:
+  searxng_data:
+  redis_data:
+  go_backend_data:
+
+# Networks - external allows host NGINX to reach containers
+networks:
+  privacy_hub_external:
+    driver: bridge
+  privacy_hub_internal:
+    driver: bridge
+    internal: true
+
+services:
+  # Redis for SearXNG performance
+  redis:
+    image: redis:7-alpine
+    container_name: ${REDIS_CONTAINER_NAME:-privacy_hub_redis_dev}
+    restart: unless-stopped
+    networks:
+      - privacy_hub_internal
+    volumes:
+      - redis_data:/data
+      - ./logs/redis:/var/log/redis
+    tmpfs:
+      - /tmp
+    logging:
+      driver: "local"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # Pi-hole DNS filtering - NO EXPOSED PORTS (accessed via host NGINX)
+  pihole:
+    build: 
+      context: ./pihole
+      dockerfile: Dockerfile
+    container_name: ${PIHOLE_CONTAINER_NAME:-privacy_hub_pihole_dev}
+    hostname: ${PIHOLE_CONTAINER_NAME:-privacy_hub_pihole_dev}
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Europe/Tallinn}
+      WEBPASSWORD: ${PIHOLE_PASSWORD:-dev123}
+      FTLCONF_webserver_api_password: ${PIHOLE_PASSWORD:-dev123}
+      FTLCONF_dns_listeningMode: 'all'
+      FTLCONF_LOCAL_IPV4: ${SERVER_IP}
+      PIHOLE_DNS_: ${PIHOLE_DNS:-1.1.1.1;1.0.0.1}
+      VIRTUAL_HOST: ${DOMAIN_NAME:-privacy-hub.local}
+      DNSMASQ_USER: root
+    volumes:
+      - pihole_data:/etc/pihole
+      - pihole_dnsmasq:/etc/dnsmasq.d
+      - ./logs/pihole:/var/log/pihole
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:false
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - CHOWN
+      - SETGID
+      - SETUID
+      - SETFCAP
+    networks:
+      - privacy_hub_external
+      - privacy_hub_internal
+
+  # SearXNG private search engine - NO EXPOSED PORTS
+  searxng:
+    image: searxng/searxng:latest
+    container_name: ${SEARXNG_CONTAINER_NAME:-privacy_hub_searxng_dev}
+    hostname: ${SEARXNG_CONTAINER_NAME:-privacy_hub_searxng_dev}
+    restart: unless-stopped
+    environment:
+      - SEARXNG_BASE_URL=https://${DOMAIN_NAME:-privacy-hub.local}/
+      - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY:-dev-secret-key}
+      - SEARXNG_DEFAULT_THEME=${SEARXNG_DEFAULT_THEME:-simple}
+      - SEARXNG_SAFE_SEARCH=${SEARXNG_SAFE_SEARCH:-0}
+      - SEARXNG_DEFAULT_LANG=${SEARXNG_DEFAULT_LANG:-en}
+      - UWSGI_WORKERS=${SEARXNG_WORKERS:-1}
+      - UWSGI_THREADS=${SEARXNG_THREADS:-1}
+    volumes:
+      - searxng_data:/etc/searxng:rw
+      - ./logs/searxng:/var/log/searxng
+      - './searxng/data:/etc/searxng'
+    tmpfs:
+      - /tmp
+      - /var/cache
+    depends_on:
+      - redis
+    networks:
+      - privacy_hub_internal
+
+  # Go Backend API - NO EXPOSED PORTS (accessed via host NGINX)
+  go_backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile # Development Dockerfile with live reload
+    container_name: ${BACKEND_CONTAINER_NAME:-privacy_hub_go_backend_dev}
+    hostname: ${BACKEND_CONTAINER_NAME:-privacy_hub_go_backend_dev}
+    restart: unless-stopped
+    environment:
+      - GO_ENV=development
+      - PI_MODE=true
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=${BACKEND_PORT:-8080}
+    volumes:
+      # Source code for live development
+      - './backend:/app'
+      # Host system access for monitoring (development)
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Development data
+      - go_backend_data:/app/data
+      - ./logs/go-backend:/app/logs
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      - docker-proxy
+    networks:
+      - privacy_hub_internal
+
+  # Docker API Proxy - secure Docker socket access
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: ${DOCKER_PROXY_CONTAINER_NAME:-privacy_hub_docker_proxy_dev}
+    hostname: ${DOCKER_PROXY_CONTAINER_NAME:-privacy_hub_docker_proxy_dev}
+    restart: unless-stopped
+    environment:
+      # Same minimal permissions as production
+      CONTAINERS: 1
+      IMAGES: 1
+      INFO: 1
+      STATS: 1
+      NETWORKS: 0
+      VOLUMES: 0
+      SERVICES: 0
+      TASKS: 0
+      SECRETS: 0
+      POST: 1
+      LOG_LEVEL: ${DOCKER_PROXY_LOG_LEVEL:-debug} # More verbose for development
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - privacy_hub_internal
+
+  # Frontend Builder - Builds static files for host NGINX (development)
+  # Runs once to build, then exits - triggered manually during development
+  frontend_builder:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.build
+      args:
+        NODE_ENV: development
+        VITE_API_BASE_URL: /api
+        VITE_DOCKER_API_BASE_URL: /docker
+    container_name: ${FRONTEND_BUILDER_CONTAINER_NAME:-privacy_hub_frontend_builder_dev}
+    volumes:
+      # Output built files to host directory for NGINX
+      - ./data/nginx/html:/output:rw
+    # Copy files and exit - this is a build-time container
+    command: sh -c "cp -r /static-files/* /output/ && echo 'Frontend build copied to /output' && ls -la /output"
+    restart: "no" # Only run once
+    profiles:
+      - build # Only run when explicitly requested
+
+  # NGINX Config Generator - Generates host NGINX configuration (development)
+  nginx_config_generator:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile.config
+    container_name: ${NGINX_CONFIG_CONTAINER_NAME:-privacy_hub_nginx_config_dev}
+    environment:
+      # All environment variables for NGINX template
+      - DOMAIN_NAME=${DOMAIN_NAME:-privacy-hub.local}
+      - SERVER_IP=${SERVER_IP}
+      - FRONTEND_ROOT=${FRONTEND_ROOT:-/var/www/privacy-hub}
+      - FRONTEND_PATH=${FRONTEND_PATH:-/manage}
+      - SSL_CERT_PATH=${SSL_CERT_PATH:-/etc/nginx/ssl/server.crt}
+      - SSL_KEY_PATH=${SSL_KEY_PATH:-/etc/nginx/ssl/server.key}
+      - PIHOLE_CONTAINER_NAME=${PIHOLE_CONTAINER_NAME:-privacy_hub_pihole_dev}
+      - SEARXNG_CONTAINER_NAME=${SEARXNG_CONTAINER_NAME:-privacy_hub_searxng_dev}
+      - BACKEND_CONTAINER_NAME=${BACKEND_CONTAINER_NAME:-privacy_hub_go_backend_dev}
+      - BACKEND_PORT=${BACKEND_PORT:-8080}
+      - DOCKER_PROXY_CONTAINER_NAME=${DOCKER_PROXY_CONTAINER_NAME:-privacy_hub_docker_proxy_dev}
+    volumes:
+      # Output generated config to host directory
+      - ./data/nginx/config:/config:rw
+    restart: "no" # Only run once
+    profiles:
+      - build # Only run when explicitly requested
+
+# Pi Host Development - Realistic production testing with development workflow
+#
+# Usage:
+#   1. Configure environment: cp .env.example .env && edit .env
+#   2. Build all assets: docker-compose -f docker-compose.pi-host-dev.yml --profile build up
+#   3. Start services: docker-compose -f docker-compose.pi-host-dev.yml up -d
+#   4. Install NGINX config: sudo cp ./data/nginx/config/nginx.conf /etc/nginx/
+#   5. Copy frontend files: sudo cp -r ./data/nginx/html/* /var/www/privacy-hub/
+#   6. Reload NGINX: sudo systemctl reload nginx
+#   7. Develop: Edit code, rebuild frontend with --profile build when needed
+#
+# This setup uses host NGINX like production but with development containers
+# Perfect for testing the full stack before production deployment

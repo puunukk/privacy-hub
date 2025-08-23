@@ -1,0 +1,262 @@
+# Privacy Hub Development Configuration
+# Uses containerized NGINX with live frontend development container
+# Ideal for development on Raspberry Pi itself
+
+# Named volumes for development data persistence
+volumes:
+  pihole_data:
+  pihole_dnsmasq:
+  searxng_data:
+  redis_data:
+  valkey_data:
+  go_backend_data:
+  node_modules_cache: # Cache node_modules for faster rebuilds
+  vscode_server_data: # Persist VS Code Server across restarts
+
+# Development networks
+networks:
+  ph_dev:
+    driver: bridge
+
+services:
+  # Redis - keeping for compatibility, will be replaced by Valkey
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: ${REDIS_CONTAINER_NAME:-redis_dev}
+  #   restart: unless-stopped
+  #   networks:
+  #     - ph_dev
+  #   volumes:
+  #     - redis_data:/data
+  #   tmpfs:
+  #     - /tmp
+  #     - /var/log/redis
+
+  # Valkey - Redis replacement
+  valkey:
+    image: valkey/valkey:7-alpine
+    container_name: ${VALKEY_CONTAINER_NAME:-valkey_cache}
+    restart: unless-stopped
+    networks:
+      - ph_dev
+    volumes:
+      - valkey_data:/data
+    tmpfs:
+      - /tmp
+      - /var/log/valkey
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  # Pi-hole - Development mode with exposed port for direct access
+  pihole:
+    build: 
+      context: ./pihole
+      dockerfile: Dockerfile
+    container_name: ${PIHOLE_CONTAINER_NAME:-pihole}
+    hostname: ${PIHOLE_CONTAINER_NAME:-privacy_hub_pihole_dev}
+    ports:
+      - "${PIHOLE_DEV_PORT:-8080}:80" # Expose for direct development access
+    environment:
+      TZ: ${TZ:-Europe/Tallinn}
+      WEBPASSWORD: ${PIHOLE_PASSWORD:-dev123}
+      FTLCONF_LOCAL_IPV4: ${SERVER_IP}
+      PIHOLE_DNS_: ${PIHOLE_DNS:-1.1.1.1;1.0.0.1}
+      VIRTUAL_HOST: ${DOMAIN_NAME:-privacy-hub.local}
+    volumes:
+      - pihole_data:/etc/pihole
+      - pihole_dnsmasq:/etc/dnsmasq.d
+      - './pihole/data:/etc/pihole'
+      - './pihole/dnsmasq:/etc/dnsmasq.d'
+    tmpfs:
+      - /var/log
+      - /tmp
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    restart: unless-stopped
+    networks:
+      - ph_dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/admin/api.php", "||", "exit", "1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # SearXNG - Development mode with exposed port
+  searxng:
+    build:
+      context: ./searxng
+      dockerfile: Dockerfile
+    container_name: ${SEARXNG_CONTAINER_NAME:-searxng}
+    hostname: ${SEARXNG_CONTAINER_NAME:-privacy_hub_searxng_dev}
+    ports:
+      - "${SEARXNG_DEV_PORT:-8081}:8080" # Expose for direct development access
+    environment:
+      - SEARXNG_BASE_URL=https://${DOMAIN_NAME:-privacy-hub.local}/
+      - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY:-dev-secret-key}
+      - SEARXNG_DEFAULT_THEME=${SEARXNG_DEFAULT_THEME:-simple}
+      - SEARXNG_SAFE_SEARCH=${SEARXNG_SAFE_SEARCH:-0}
+      - SEARXNG_DEFAULT_LANG=${SEARXNG_DEFAULT_LANG:-en}
+      - UWSGI_WORKERS=1 # Reduced for development
+      - UWSGI_THREADS=1
+    volumes:
+      - searxng_data:/etc/searxng:rw
+      - './searxng/data:/etc/searxng'
+    tmpfs:
+      - /var/log
+      - /tmp
+      - /var/cache
+    depends_on:
+      - valkey
+    restart: unless-stopped
+    networks:
+      - ph_dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/", "||", "exit", "1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Go Backend - Development mode with live reload and exposed port
+  go_backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile # Use development Dockerfile, not .build
+    container_name: ${BACKEND_CONTAINER_NAME:-PH_API_Backend_Dev}
+    hostname: ${BACKEND_CONTAINER_NAME:-privacy_hub_go_backend_dev}
+    ports:
+      - "${BACKEND_DEV_PORT:-8082}:8111" # Expose for direct development access
+    environment:
+      - GO_ENV=development
+      - PI_MODE=true
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8111
+    volumes:
+      # Source code for live development
+      - './backend:/app'
+      # Host system access for monitoring (development) - Fixed host mount paths
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc:/host/etc:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Development data
+      - go_backend_data:/app/data
+    tmpfs:
+      - /tmp
+    depends_on:
+      - docker-proxy
+    restart: unless-stopped
+    networks:
+      - ph_dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8111/health", "||", "exit", "1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # Frontend Development Server - Live reload for React development
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev # Development Dockerfile with live reload
+    container_name: ${FRONTEND_CONTAINER_NAME:-PH_Frontend_Dev}
+    hostname: ${FRONTEND_CONTAINER_NAME:-privacy_hub_frontend_dev}
+    # No ports exposed - access only through NGINX
+    environment:
+      - NODE_ENV=development
+      - VITE_API_BASE_URL=/api
+      - VITE_DOCKER_API_BASE_URL=/api/docker
+      - VITE_HMR_PORT=3000
+      - CHOKIDAR_USEPOLLING=true
+      - DOCKER_ENV=true
+      - WDS_SOCKET_HOST=0.0.0.0
+      - WDS_SOCKET_PORT=3000
+    volumes:
+      # Source code for live development
+      - './frontend:/app'
+      # Anonymous volume to prevent node_modules from being overwritten by bind mount
+      - node_modules_cache:/app/node_modules
+      # Persist VS Code Server data across container restarts  
+      - vscode_server_data:/home/node/.vscode-server
+    command: sh -c "mkdir -p /app/node_modules && chown -R node:node /app/node_modules /app && su node -c 'cd /app && npm install && npm run dev:debug'"
+    user: "0:0"  # Start as root to fix permissions, then switch to node user
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+    networks:
+      - ph_dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/", "||", "exit", "1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # Docker API Proxy - same as production but with development logging
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: ${DOCKER_PROXY_CONTAINER_NAME:-docker_proxy}
+    hostname: ${DOCKER_PROXY_CONTAINER_NAME:-privacy_hub_docker_proxy_dev}
+    environment:
+      # Same minimal permissions as production
+      CONTAINERS: 1
+      IMAGES: 1
+      INFO: 1
+      STATS: 1
+      NETWORKS: 0
+      VOLUMES: 0
+      SERVICES: 0
+      TASKS: 0
+      SECRETS: 0
+      POST: 1
+      LOG_LEVEL: ${DOCKER_PROXY_LOG_LEVEL:-debug} # More verbose for development
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+    networks:
+      - ph_dev
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:2375/version", "||", "exit", "1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # NGINX - Resilient router that starts FIRST and handles service discovery
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: dockerfiles/Dockerfile.dev # Use development-specific Dockerfile
+    container_name: ${NGINX_CONTAINER_NAME:-nginx}
+    hostname: ${NGINX_CONTAINER_NAME:-privacy_hub_nginx_dev}
+    ports:
+      # NGINX handles all external traffic and starts immediately
+      - "53:53/tcp" # DNS
+      - "53:53/udp" # DNS  
+      - "80:80" # HTTP
+      - "443:443" # HTTPS
+    volumes:
+      - './certs:/etc/nginx/ssl'
+      # Using config built into container - no volume override needed
+    tmpfs:
+      - /var/log/nginx
+      - /tmp
+    restart: unless-stopped
+    # NO DEPENDENCIES - NGINX starts first and handles missing services gracefully
+    networks:
+      - ph_dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health", "||", "exit", "1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

@@ -1,0 +1,131 @@
+# Privacy Hub - Basic Setup (Default)
+# Core privacy services for any machine: SearXNG + Pi-hole + NGINX
+# No Pi-specific features, no frontend dashboard
+version: '3.9'
+
+# Named volumes for data persistence
+volumes:
+  pihole_data:
+  pihole_dnsmasq:
+  searxng_data:
+  redis_data:
+
+# Simple network
+networks:
+  privacy_hub:
+    driver: bridge
+
+services:
+  # Redis for SearXNG performance
+  redis:
+    image: redis:7-alpine
+    container_name: ${REDIS_CONTAINER_NAME:-privacy_hub_redis}
+    restart: unless-stopped
+    networks:
+      - privacy_hub
+    volumes:
+      - redis_data:/data
+    tmpfs:
+      - /tmp
+    logging:
+      driver: "local"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Pi-hole DNS filtering
+  pihole:
+    build: 
+      context: ./pihole
+      dockerfile: Dockerfile
+    container_name: ${PIHOLE_CONTAINER_NAME:-privacy_hub_pihole}
+    hostname: ${PIHOLE_CONTAINER_NAME:-privacy_hub_pihole}
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-UTC}
+      WEBPASSWORD: ${PIHOLE_PASSWORD:-admin}
+      FTLCONF_LOCAL_IPV4: ${SERVER_IP:-192.168.1.100}
+      PIHOLE_DNS_: ${PIHOLE_DNS:-1.1.1.1;8.8.8.8}
+      VIRTUAL_HOST: ${DOMAIN_NAME:-privacy-hub.local}
+      DNSMASQ_USER: root
+    volumes:
+      - pihole_data:/etc/pihole
+      - pihole_dnsmasq:/etc/dnsmasq.d
+    tmpfs:
+      - /var/log
+      - /tmp
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    networks:
+      - privacy_hub
+
+  # SearXNG private search engine
+  searxng:
+    image: searxng/searxng:latest
+    container_name: ${SEARXNG_CONTAINER_NAME:-privacy_hub_searxng}
+    hostname: ${SEARXNG_CONTAINER_NAME:-privacy_hub_searxng}
+    restart: unless-stopped
+    environment:
+      - SEARXNG_BASE_URL=https://${DOMAIN_NAME:-privacy-hub.local}/
+      - SEARXNG_SECRET_KEY=${SEARXNG_SECRET_KEY:-basic-secret-key}
+      - SEARXNG_DEFAULT_THEME=${SEARXNG_DEFAULT_THEME:-simple}
+      - SEARXNG_SAFE_SEARCH=${SEARXNG_SAFE_SEARCH:-1}
+      - SEARXNG_DEFAULT_LANG=${SEARXNG_DEFAULT_LANG:-en}
+      - UWSGI_WORKERS=${SEARXNG_WORKERS:-2}
+      - UWSGI_THREADS=${SEARXNG_THREADS:-2}
+    volumes:
+      - searxng_data:/etc/searxng:rw
+    tmpfs:
+      - /tmp
+      - /var/cache
+    depends_on:
+      - redis
+    networks:
+      - privacy_hub
+
+  # NGINX - Single entry point for all users
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: ${NGINX_CONTAINER_NAME:-privacy_hub_nginx}
+    hostname: ${NGINX_CONTAINER_NAME:-privacy_hub_nginx}
+    ports:
+      - "53:53/tcp"   # DNS
+      - "53:53/udp"   # DNS  
+      - "80:80"       # HTTP
+      - "443:443"     # HTTPS
+    volumes:
+      - './nginx/ssl:/etc/nginx/ssl'
+      - './nginx/nginx.conf:/etc/nginx/nginx.conf' # Basic NGINX config
+    tmpfs:
+      - /var/log/nginx
+      - /tmp
+    restart: unless-stopped
+    depends_on:
+      - pihole
+      - searxng
+    networks:
+      - privacy_hub
+
+# Basic Usage (Default):
+#
+# 1. Configure environment:
+#    cp .env.example .env
+#    # Edit SERVER_IP to your machine's IP address
+#
+# 2. Start services:
+#    docker-compose up -d
+#
+# 3. Access services:
+#    - Private Search: https://localhost/
+#    - Pi-hole Admin: https://localhost/admin  
+#    - Health Check: https://localhost/health
+#
+# 4. Configure DNS:
+#    Set your router's DNS to this machine's IP address
+#    Or manually set DNS on individual devices
+#
+# This is the basic setup suitable for any Linux/Mac/Windows machine
+# wanting core privacy services without Pi-specific features

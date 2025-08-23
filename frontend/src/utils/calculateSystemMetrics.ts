@@ -1,4 +1,4 @@
-import type { SystemMetrics } from '../store/metrics/types'
+import type { SystemMetrics } from '@/store/metrics/types'
 
 /**
  * Calculate memory usage percentage from system metrics

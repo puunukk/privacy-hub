@@ -45,15 +45,17 @@ func (s *PlatformService) detectPlatform() {
 
 // detectContainer checks if we're running inside a container
 func (s *PlatformService) detectContainer() bool {
-	// Check for container-specific files/directories
+	fmt.Printf("DEBUG: Starting container detection\n")
+	
+	// Check for container-specific files/directories (most reliable)
 	containerIndicators := []string{
 		"/.dockerenv",                    // Docker
 		"/run/.containerenv",             // Podman
-		"/proc/1/cgroup",                 // Check init process cgroup
 	}
 	
 	for _, indicator := range containerIndicators {
 		if _, err := os.Stat(indicator); err == nil {
+			fmt.Printf("DEBUG: Found container indicator: %s\n", indicator)
 			return true
 		}
 	}
@@ -63,23 +65,56 @@ func (s *PlatformService) detectContainer() bool {
 		containerKeywords := []string{"docker", "containerd", "kubepods", "lxc", "crio"}
 		for _, keyword := range containerKeywords {
 			if strings.Contains(strings.ToLower(data), keyword) {
+				fmt.Printf("DEBUG: Found container keyword in cgroup: %s\n", keyword)
 				return true
 			}
 		}
 	}
 	
-	// Check if we're running in a container by examining the hostname
+	// Check if we have typical container environment variables
+	if os.Getenv("DOCKER_CONTAINER") != "" || 
+	   os.Getenv("container") != "" ||
+	   os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
+		fmt.Printf("DEBUG: Found container environment variables\n")
+		return true
+	}
+	
+	// More sophisticated hostname check - only flag as container if very specific patterns
 	if hostname, err := os.Hostname(); err == nil {
-		// Container hostnames are often random strings or contain container IDs
-		if len(hostname) == 64 || strings.Contains(hostname, "-") {
-			// Additional check: if hostname doesn't match typical Pi hostnames
-			if !strings.Contains(strings.ToLower(hostname), "raspberry") && 
-			   !strings.Contains(strings.ToLower(hostname), "pi") {
+		fmt.Printf("DEBUG: Checking hostname: %s\n", hostname)
+		
+		// Container hostnames are typically:
+		// - Exactly 64 hex characters (Docker container IDs)
+		// - Random strings with no dots (like "abc123def456")
+		// - Kubernetes pod names (like "pod-12345-abcde")
+		if len(hostname) == 64 {
+			// Check if it's all hex characters (Docker container ID)
+			isHex := true
+			for _, char := range strings.ToLower(hostname) {
+				if !((char >= '0' && char <= '9') || (char >= 'a' && char <= 'f')) {
+					isHex = false
+					break
+				}
+			}
+			if isHex {
+				fmt.Printf("DEBUG: Hostname appears to be Docker container ID\n")
+				return true
+			}
+		}
+		
+		// Check for Kubernetes pod naming patterns (but allow normal hostnames with domains)
+		if strings.Contains(hostname, "-") && !strings.Contains(hostname, ".") {
+			// This could be a pod name, but let's be more specific
+			parts := strings.Split(hostname, "-")
+			if len(parts) >= 3 {
+				// Kubernetes pods often have format: name-hash-hash or name-deployment-hash
+				fmt.Printf("DEBUG: Hostname might be Kubernetes pod\n")
 				return true
 			}
 		}
 	}
 	
+	fmt.Printf("DEBUG: No container indicators found - running on host\n")
 	return false
 }
 

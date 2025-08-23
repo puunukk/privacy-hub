@@ -3,9 +3,10 @@ package models
 // MetricsResponse contains real-time system metrics that change frequently
 type MetricsResponse struct {
 	CPUTemp     float64     `json:"cpu_temp"`     // CPU temperature in Celsius
-	MemoryFree  int64       `json:"memory_free"`  // Available memory in KB
-	MemoryTotal int64       `json:"memory_total"` // Total memory in KB  
-	MemoryUsed  int64       `json:"memory_used"`  // Used memory in KB
+	Memory      MemoryInfo  `json:"memory"`       // Memory information in KB values
+	//MemoryFree  int64       `json:"memory_free"`  // Available memory in KB
+	//MemoryTotal int64       `json:"memory_total"` // Total memory in KB  
+	//MemoryUsed  int64       `json:"memory_used"`  // Used memory in KB
 	LoadAvg     string      `json:"load_avg"`     // Load averages (1m 5m 15m)
 	Storage     StorageInfo `json:"storage"`      // Comprehensive storage information
 	Timestamp   int64       `json:"timestamp"`    // Unix timestamp
@@ -18,6 +19,7 @@ type InfoResponse struct {
 	Gateway  string `json:"gateway"`  // Default gateway
 	DNS      string `json:"dns"`      // Primary DNS server
 	Uptime   string `json:"uptime"`   // System uptime in seconds
+	IsContainer bool `json:"isContainer"` // Whether the system is running in a container
 }
 
 // CommandResponse indicates command execution status

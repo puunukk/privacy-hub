@@ -48,3 +48,12 @@ type PlatformInfo struct {
 	EtcPaths     []string `json:"etc_paths"`     // Available /etc paths
 	SysPaths     []string `json:"sys_paths"`     // Available /sys paths
 }
+
+// RebootMetrics holds reboot metrics
+// type RebootMetrics struct {
+//     StartTime    time.Time `json:"startTime"`
+//     EndTime      time.Time `json:"endTime"`
+//     Duration     time.Duration `json:"duration"`
+//     TotalReboots int `json:"totalReboots"`
+//     AvgDuration  time.Duration `json:"avgDuration"`
+// }

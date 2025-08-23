@@ -21,12 +21,17 @@ func Info(w http.ResponseWriter, r *http.Request) {
 	
 	networkInfo := networkSvc.GetNetworkInfo()
 	
+	// Get platform info for container detection
+	platformSvc := services.NewPlatformService()
+	platformInfo := platformSvc.GetPlatformInfo()
+	
 	response := models.InfoResponse{
-		Hostname: systemSvc.GetHostname(),
-		IP:       networkInfo.IP,
-		Gateway:  networkInfo.Gateway,
-		DNS:      networkInfo.DNS,
-		Uptime:   systemSvc.GetUptime(),
+		Hostname:    systemSvc.GetHostname(),
+		IP:          networkInfo.IP,
+		Gateway:     networkInfo.Gateway,
+		DNS:         networkInfo.DNS,
+		Uptime:      systemSvc.GetUptime(),
+		IsContainer: platformInfo.IsContainer,
 	}
 	
 	json.NewEncoder(w).Encode(response)

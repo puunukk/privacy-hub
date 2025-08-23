@@ -4,7 +4,8 @@ import type {
     AppConfigState,
     ApplicationStatus,
     Notification,
-    Theme
+    Theme,
+    PollingIntervals
 } from './types'
 
 const initialState: AppConfigState = {
@@ -13,6 +14,11 @@ const initialState: AppConfigState = {
     theme: 'auto',
     notifications: [],
     error: null,
+    pollingIntervals: {
+        containers: 15000,    // 15 seconds for container data
+        metrics: 30000,       // 30 seconds for metrics  
+        systemInfo: 60000     // 60 seconds for system info
+    }
 }
 
 const appConfigSlice = createSlice({
@@ -42,6 +48,9 @@ const appConfigSlice = createSlice({
         clearError: (state) => {
             state.error = null
         },
+        updatePollingIntervals: (state, action: PayloadAction<Partial<PollingIntervals>>) => {
+            state.pollingIntervals = { ...state.pollingIntervals, ...action.payload }
+        },
     },
 })
 
@@ -53,6 +62,7 @@ export const {
     hideNotification,
     setError,
     clearError,
+    updatePollingIntervals,
 } = appConfigSlice.actions
 
 export default appConfigSlice.reducer

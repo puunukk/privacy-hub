@@ -1,5 +1,5 @@
-import { PureComponent, type ReactNode } from 'react'
-import { cn } from '../../../utils/cn'
+import { type ReactNode } from 'react'
+import { cn } from '@/utils/cn'
 
 // Base Typography Props - shared across all subcomponents
 export interface BaseTypographyProps {
@@ -37,16 +37,17 @@ export const alignClasses = {
     right: 'text-right'
 }
 
-// Base Typography Component - not exported, used internally
-export abstract class BaseTypography<T extends BaseTypographyProps> extends PureComponent<T> {
-    protected getCommonClasses() {
-        const { color = 'primary', weight, align = 'left', className } = this.props
-
-        return cn(
-            colorClasses[color],
-            weight && weightClasses[weight],
-            alignClasses[align],
-            className
-        )
-    }
+// Utility function to get common typography classes
+export const getCommonTypographyClasses = (
+  color: BaseTypographyProps['color'] = 'primary',
+  weight?: BaseTypographyProps['weight'],
+  align: BaseTypographyProps['align'] = 'left',
+  className?: string
+) => {
+  return cn(
+    colorClasses[color],
+    weight && weightClasses[weight],
+    alignClasses[align],
+    className
+  )
 }

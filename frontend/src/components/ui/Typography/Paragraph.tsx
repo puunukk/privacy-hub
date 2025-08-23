@@ -1,5 +1,6 @@
-import { BaseTypography, BaseTypographyProps } from './Typography'
-import { cn } from '../../../utils/cn'
+import { } from 'react'
+import { getCommonTypographyClasses, BaseTypographyProps } from './Typography'
+import { cn } from '@/utils/cn'
 
 interface ParagraphProps extends BaseTypographyProps {
     size?: 'sm' | 'base' | 'lg'
@@ -18,20 +19,19 @@ const paragraphSpacingClasses: Record<string, string> = {
     relaxed: 'leading-relaxed'
 }
 
-export class Paragraph extends BaseTypography<ParagraphProps> {
-    render() {
-        const { size = 'base', spacing = 'normal', children } = this.props
+export const Paragraph = ({ size = 'base', spacing = 'normal', children, color, weight, align, className, ...props }: ParagraphProps) => {
+  const classes = cn(
+    paragraphSizeClasses[size],
+    paragraphSpacingClasses[spacing],
+    'transition-colors duration-200',
+    getCommonTypographyClasses(color, weight, align, className)
+  )
 
-        const classes = cn(
-            paragraphSizeClasses[size],
-            paragraphSpacingClasses[spacing],
-            this.getCommonClasses()
-        )
-
-        return (
-            <p className={classes}>
-                {children}
-            </p>
-        )
-    }
+  return (
+    <p className={classes} {...props}>
+      {children}
+    </p>
+  )
 }
+
+Paragraph.displayName = 'Paragraph'

@@ -1,28 +1,49 @@
-# Simple build and serve
+# Multi-stage build for Privacy Hub Frontend
+# Builds optimized static files for production deployment
 FROM node:22-alpine as build
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better Docker layer caching
 COPY package*.json ./
 COPY tsconfig*.json ./  
 COPY tailwind.config.js ./
 COPY postcss.config.js ./
 COPY vite.config.ts ./
+COPY eslint.config.js ./
+COPY jsconfig.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies (cached if package.json unchanged)
+RUN npm ci --only=production --silent
 
-# Copy source code
+# Copy all source files
 COPY src/ ./src/
+COPY public/ ./public/
 COPY index.html ./
+COPY types.d.ts ./
 
-# Ensure Tailwind can scan all files properly
+# Set production environment for optimal build
 ENV NODE_ENV=production
+ENV VITE_API_BASE_URL=/api
+ENV VITE_DOCKER_API_BASE_URL=/docker
 
-# Build the app with verbose output for debugging
+# Build the application - generates optimized static files
 RUN npm run build
 
-# Create output directory and copy built files
-RUN mkdir -p /output
-CMD ["cp", "-r", "/app/dist", "/output/"]
+# Verify build output exists
+RUN ls -la /app/dist && echo "Build completed successfully"
+
+# Final stage - just the static files
+FROM alpine:latest as static-files
+
+# Create output directory structure
+RUN mkdir -p /static-files
+
+# Copy built static files from build stage  
+COPY --from=build /app/dist /static-files
+
+# Add build metadata
+RUN echo "Frontend built on $(date)" > /static-files/build-info.txt
+
+# Container stays alive for copying files out
+CMD ["sh", "-c", "echo 'Static files ready in /static-files' && tail -f /dev/null"]

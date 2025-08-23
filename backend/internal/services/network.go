@@ -23,18 +23,26 @@ func NewNetworkService() *NetworkService {
 
 // GetNetworkInfo extracts IP and gateway from routing table
 func (s *NetworkService) GetNetworkInfo() models.NetworkInfo {
+	fmt.Printf("DEBUG: GetNetworkInfo called\n")
 	info := models.NetworkInfo{}
 	
+	platformInfo := s.platform.GetPlatformInfo()
+	fmt.Printf("DEBUG: Platform detection - IsContainer: %t\n", platformInfo.IsContainer)
+	
 	// If running in container, try to get host IP through various methods
-	if s.platform.GetPlatformInfo().IsContainer {
+	if platformInfo.IsContainer {
+		fmt.Printf("DEBUG: Using container network detection\n")
 		info = s.getHostNetworkInfo()
 	} else {
+		fmt.Printf("DEBUG: Using local network detection\n")
 		info = s.getLocalNetworkInfo()
 	}
 	
 	// Get DNS using platform detection
+	fmt.Printf("DEBUG: Getting DNS info\n")
 	info.DNS = s.getDNS()
 	
+	fmt.Printf("DEBUG: NetworkInfo result - IP: '%s', Gateway: '%s', DNS: '%s'\n", info.IP, info.Gateway, info.DNS)
 	return info
 }
 
@@ -74,24 +82,236 @@ func (s *NetworkService) getLocalNetworkInfo() models.NetworkInfo {
 func (s *NetworkService) getHostNetworkInfo() models.NetworkInfo {
 	info := models.NetworkInfo{}
 	
-	// Method 1: Try to get host IP from Docker bridge network
-	if hostIP := s.getHostIPFromDocker(); hostIP != "" {
+	// Primary method: Read directly from host's routing table via mounted filesystem
+	if gateway, hostIP := s.getHostNetworkFromRouting(); gateway != "" || hostIP != "" {
+		info.Gateway = gateway
 		info.IP = hostIP
 	}
 	
-	// Method 2: Try to get gateway from host routing
-	if gateway := s.getHostGateway(); gateway != "" {
-		info.Gateway = gateway
-	}
-	
-	// Method 3: If still no IP, try to get it from host network interfaces
+	// Fallback method 1: Try to get host IP from Docker bridge network
 	if info.IP == "" {
-		if hostIP := s.getHostIPFromInterfaces(); hostIP != "" {
+		if hostIP := s.getHostIPFromDocker(); hostIP != "" {
 			info.IP = hostIP
 		}
 	}
 	
+	// Fallback method 2: Try alternative host network detection
+	if info.Gateway == "" {
+		if gateway := s.getHostGatewayFallback(); gateway != "" {
+			info.Gateway = gateway
+		}
+	}
+	
 	return info
+}
+
+// getHostNetworkFromRouting reads host network info directly from mounted host routing table
+func (s *NetworkService) getHostNetworkFromRouting() (gateway string, hostIP string) {
+	// Read host's routing table from mounted filesystem
+	hostRoutePath := s.platform.ResolvePath("proc", "net/route")
+	if hostRoutePath == "" {
+		fmt.Printf("DEBUG: Could not resolve host route path\n")
+		return "", ""
+	}
+	
+	fmt.Printf("DEBUG: Reading host routing from: %s\n", hostRoutePath)
+	data, err := utils.ReadFile(hostRoutePath)
+	if err != nil {
+		fmt.Printf("DEBUG: Error reading host route file: %v\n", err)
+		return "", ""
+	}
+	
+	fmt.Printf("DEBUG: Host route data length: %d bytes\n", len(data))
+	
+	lines := strings.Split(data, "\n")
+	if len(lines) < 2 {
+		return "", ""
+	}
+	
+	// Skip header line, process routing entries
+	for i := 1; i < len(lines); i++ {
+		line := strings.TrimSpace(lines[i])
+		if line == "" {
+			continue
+		}
+		
+		fields := strings.Fields(line)
+		if len(fields) < 8 {
+			continue
+		}
+		
+		// Field layout: Iface Destination Gateway Flags RefCnt Use Metric Mask MTU Window IRTT
+		destination := fields[1]
+		gatewayHex := fields[2]
+		// flags := fields[3] // Not used currently
+		
+		// Look for default route (destination 00000000)
+		if destination == "00000000" && gatewayHex != "00000000" {
+			gateway = s.hexToIP(gatewayHex)
+			fmt.Printf("DEBUG: Found default route - Gateway hex: %s -> IP: %s\n", gatewayHex, gateway)
+			
+			// Try to find the host IP by looking at the interface for this route
+			iface := fields[0]
+			fmt.Printf("DEBUG: Default route interface: %s\n", iface)
+			if srcIP := s.getHostIPForInterfaceFromRouting(iface, lines); srcIP != "" {
+				hostIP = srcIP
+				fmt.Printf("DEBUG: Found host IP from routing: %s\n", hostIP)
+			}
+			break
+		}
+	}
+	
+	// If we didn't find host IP from routing table, try alternative methods
+	if hostIP == "" && gateway != "" {
+		// Method 1: Try to get from ARP table 
+		if ip := s.getHostIPFromGatewaySubnet(gateway); ip != "" {
+			hostIP = ip
+		}
+	}
+	
+	// Method 2: Try to get from host network interfaces via /proc/net/fib_trie (more reliable)
+	if hostIP == "" {
+		fmt.Printf("DEBUG: Trying to get IP from fib_trie\n")
+		if ip := s.getHostIPFromFibTrie(); ip != "" {
+			hostIP = ip
+			fmt.Printf("DEBUG: Found host IP from fib_trie: %s\n", hostIP)
+		}
+	}
+	
+	fmt.Printf("DEBUG: Final network result - Gateway: %s, IP: %s\n", gateway, hostIP)
+	return gateway, hostIP
+}
+
+// getHostIPForInterfaceFromRouting finds the host IP for a specific interface from routing table
+func (s *NetworkService) getHostIPForInterfaceFromRouting(targetIface string, routeLines []string) string {
+	// Look for a non-default route on the same interface to get the source IP
+	for i := 1; i < len(routeLines); i++ {
+		line := strings.TrimSpace(routeLines[i])
+		if line == "" {
+			continue
+		}
+		
+		fields := strings.Fields(line)
+		if len(fields) < 8 {
+			continue
+		}
+		
+		iface := fields[0]
+		destination := fields[1]
+		gateway := fields[2]
+		
+		// Same interface, not default route, and has a source (gateway field can be source for directly connected networks)
+		if iface == targetIface && destination != "00000000" && gateway != "00000000" {
+			// For directly connected networks, the gateway field might actually be the source IP
+			return s.hexToIP(gateway)
+		}
+	}
+	
+	return ""
+}
+
+// getHostIPFromGatewaySubnet tries to determine host IP from gateway's subnet using ARP or neighbor info
+func (s *NetworkService) getHostIPFromGatewaySubnet(gateway string) string {
+	// Try to read ARP table from host to find our IP in the same subnet as gateway
+	hostArpPath := s.platform.ResolvePath("proc", "net/arp")
+	if hostArpPath == "" {
+		return ""
+	}
+	
+	data, err := utils.ReadFile(hostArpPath)
+	if err != nil {
+		return ""
+	}
+	
+	// Parse gateway to get subnet (assuming /24 for simplicity)
+	gatewayParts := strings.Split(gateway, ".")
+	if len(gatewayParts) != 4 {
+		return ""
+	}
+	subnet := fmt.Sprintf("%s.%s.%s.", gatewayParts[0], gatewayParts[1], gatewayParts[2])
+	
+	// Look for IPs in the same subnet in ARP table
+	lines := strings.Split(data, "\n")
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		if len(fields) >= 1 {
+			ip := fields[0]
+			if strings.HasPrefix(ip, subnet) && ip != gateway {
+				// This could be our host IP - let's validate it's not a reserved address
+				lastOctet := strings.Split(ip, ".")[3]
+				if lastOctet != "1" && lastOctet != "255" && lastOctet != "0" {
+					return ip
+				}
+			}
+		}
+	}
+	
+	return ""
+}
+
+// getHostIPFromFibTrie reads host IP addresses from /proc/net/fib_trie
+func (s *NetworkService) getHostIPFromFibTrie() string {
+	// Try to read from host's fib_trie which shows all local IPs
+	hostFibPath := s.platform.ResolvePath("proc", "net/fib_trie")
+	if hostFibPath == "" {
+		return ""
+	}
+	
+	data, err := utils.ReadFile(hostFibPath)
+	if err != nil {
+		return ""
+	}
+	
+	lines := strings.Split(data, "\n")
+	var candidateIPs []string
+	
+	for _, line := range lines {
+		// Look for host entries that show local IP addresses
+		if strings.Contains(line, "/32 host LOCAL") {
+			// Extract IP from the line format: "      |-- 192.168.1.100/32 host LOCAL"
+			if idx := strings.Index(line, "|--"); idx != -1 {
+				ipPart := strings.TrimSpace(line[idx+3:])
+				if idx2 := strings.Index(ipPart, "/32"); idx2 != -1 {
+					ip := ipPart[:idx2]
+					
+					// Filter out loopback and other special addresses
+					if !strings.HasPrefix(ip, "127.") && 
+					   !strings.HasPrefix(ip, "169.254.") &&
+					   ip != "0.0.0.0" {
+						candidateIPs = append(candidateIPs, ip)
+					}
+				}
+			}
+		}
+	}
+	
+	// Prefer private network ranges (192.168.x.x, 10.x.x.x) over public IPs
+	for _, ip := range candidateIPs {
+		if strings.HasPrefix(ip, "192.168.") || strings.HasPrefix(ip, "10.") {
+			return ip
+		}
+	}
+	
+	// If no private IP found, return first valid candidate
+	if len(candidateIPs) > 0 {
+		return candidateIPs[0]
+	}
+	
+	return ""
+}
+
+// getHostGatewayFallback is the original getHostGateway method as fallback
+func (s *NetworkService) getHostGatewayFallback() string {
+	// Method 1: Use ip route command directly
+	output, err := exec.Command("sh", "-c", "ip route show default | awk '/default/ {print $3}'").Output()
+	if err == nil {
+		gateway := strings.TrimSpace(string(output))
+		if gateway != "" && !strings.HasPrefix(gateway, "172.") {
+			return gateway
+		}
+	}
+	
+	return ""
 }
 
 // getHostIPFromDocker tries to get host IP from Docker bridge network
@@ -110,10 +330,9 @@ func (s *NetworkService) getHostIPFromDocker() string {
 			for i, field := range fields {
 				if field == "via" && i+1 < len(fields) {
 					// This is likely the Docker bridge gateway
-					// The host IP is usually the same subnet
+					// Try to get host IP from gateway subnet using ARP table
 					gateway := fields[i+1]
-					// Extract subnet and try to find host IP
-					if hostIP := s.findHostIPInSubnet(gateway); hostIP != "" {
+					if hostIP := s.getHostIPFromGatewaySubnet(gateway); hostIP != "" {
 						return hostIP
 					}
 				}
@@ -124,135 +343,8 @@ func (s *NetworkService) getHostIPFromDocker() string {
 	return ""
 }
 
-// getHostGateway gets the host's default gateway
-func (s *NetworkService) getHostGateway() string {
-	// When running in host network mode, we can directly access host routing
-	// Method 1: Get from host's routing table directly
-	hostRoutePath := s.platform.ResolvePath("proc", "net/route")
-	if hostRoutePath != "" {
-		if data, err := utils.ReadFile(hostRoutePath); err == nil {
-			lines := strings.Split(data, "\n")
-			for _, line := range lines {
-				fields := strings.Fields(line)
-				if len(fields) >= 2 && fields[1] == "00000000" { // Default route
-					if len(fields) >= 3 {
-						// Convert hex gateway to IP
-						return s.hexToIP(fields[2])
-					}
-				}
-			}
-		}
-	}
-	
-	// Method 2: Use ip route command directly
-	output, err := exec.Command("sh", "-c", "ip route show default | awk '/default/ {print $3}'").Output()
-	if err == nil {
-		gateway := strings.TrimSpace(string(output))
-		if gateway != "" && !strings.HasPrefix(gateway, "172.") {
-			return gateway
-		}
-	}
-	
-	return ""
-}
 
-// getHostIPFromInterfaces tries to get host IP from network interfaces
-func (s *NetworkService) getHostIPFromInterfaces() string {
-	// When running in host network mode, we can directly access host network info
-	// Try multiple methods to get the actual host IP
-	
-	// Method 1: Get the IP that would be used to reach external networks
-	output, err := exec.Command("sh", "-c", "ip route get 8.8.8.8 2>/dev/null | grep -oP 'src \\K\\S+'").Output()
-	if err == nil {
-		ip := strings.TrimSpace(string(output))
-		if ip != "" && !strings.HasPrefix(ip, "172.") && !strings.HasPrefix(ip, "10.") {
-			return ip
-		}
-	}
-	
-	// Method 2: Get from host's network interfaces - look for the main interface
-	output, err = exec.Command("sh", "-c", "ip addr show | grep -E 'inet .* global' | grep -v '172.' | grep -v '10.' | head -1 | awk '{print $2}' | cut -d'/' -f1").Output()
-	if err == nil {
-		ip := strings.TrimSpace(string(output))
-		if ip != "" {
-			return ip
-		}
-	}
-	
-	// Method 3: Try to get from host's routing table directly
-	hostRoutePath := s.platform.ResolvePath("proc", "net/route")
-	if hostRoutePath != "" {
-		if data, err := utils.ReadFile(hostRoutePath); err == nil {
-			lines := strings.Split(data, "\n")
-			for _, line := range lines {
-				fields := strings.Fields(line)
-				if len(fields) >= 2 && fields[1] == "00000000" { // Default route
-					if len(fields) >= 4 {
-						// The source IP is in field 7 (0-indexed)
-						if len(fields) >= 7 {
-							return s.hexToIP(fields[6])
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	return ""
-}
 
-// findHostIPInSubnet tries to find the host IP in the same subnet as the gateway
-func (s *NetworkService) findHostIPInSubnet(gateway string) string {
-	// Get the host IP from the host's network interfaces
-	// Use the mounted host filesystem to read the actual host network info
-	hostNetPath := s.platform.ResolvePath("proc", "net/dev")
-	if hostNetPath == "" {
-		return ""
-	}
-	
-	// Read host's network interfaces and find the main interface IP
-	if data, err := utils.ReadFile(hostNetPath); err == nil {
-		lines := strings.Split(data, "\n")
-		for _, line := range lines {
-			fields := strings.Fields(line)
-			if len(fields) >= 2 {
-				// Look for the main interface (eth0, wlan0, etc.)
-				iface := fields[0]
-				if strings.HasPrefix(iface, "eth") || strings.HasPrefix(iface, "wlan") {
-					// Get the IP for this interface from host's routing table
-					if hostIP := s.getHostIPForInterface(iface); hostIP != "" {
-						return hostIP
-					}
-				}
-			}
-		}
-	}
-	
-	return ""
-}
-
-// getHostIPForInterface gets the IP address for a specific interface from host's routing table
-func (s *NetworkService) getHostIPForInterface(iface string) string {
-	hostRoutePath := s.platform.ResolvePath("proc", "net/route")
-	if hostRoutePath == "" {
-		return ""
-	}
-	
-	if data, err := utils.ReadFile(hostRoutePath); err == nil {
-		lines := strings.Split(data, "\n")
-		for _, line := range lines {
-			fields := strings.Fields(line)
-			if len(fields) >= 1 && fields[0] == iface {
-				// Found the interface, get the source IP from the default route
-				if len(fields) >= 7 && fields[1] == "00000000" { // Default route
-					return s.hexToIP(fields[6]) // Source IP is in field 7
-				}
-			}
-		}
-	}
-	
-	return ""
-}
 
 // hexToIP converts hex IP to dotted decimal
 func (s *NetworkService) hexToIP(hex string) string {

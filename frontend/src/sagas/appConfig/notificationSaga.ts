@@ -32,4 +32,11 @@ function* cleanupExpiredNotificationsSaga(): Generator {
     }
 }
 
+function* notificationSaga(): Generator {
+  // Currently just export the individual sagas
+  // We could add watcher logic here if needed
+  console.log('🔔 Notification saga started')
+}
+
 export { autoHideNotificationSaga, cleanupExpiredNotificationsSaga }
+export default notificationSaga

@@ -1,26 +1,41 @@
-# Development container - PROPERLY SETUP
+# Development container - PROPERLY SETUP for Vite HMR
 FROM node:22-alpine
 
-# Install bash for Dev Container support
-#RUN apk add --no-cache bash
+# Install bash and other utilities for development
+RUN apk add --no-cache bash git
+
+# Create non-root user for security (use standard node user)
+# Note: node:22-alpine already has node user with uid 1000
 
 WORKDIR /app
 
-# Install dependencies first
+# Copy package files
 COPY package*.json ./
-RUN npm install
 
-# Copy ALL config files needed for Vite
+# Install dependencies with clean slate
+RUN npm ci
+
+# Copy configuration files
 COPY tsconfig*.json ./
 COPY tailwind.config.js ./
 COPY postcss.config.js ./
 COPY vite.config.ts ./
+COPY eslint.config.js ./
+COPY jsconfig.json ./
+COPY types.d.ts ./
 
-# Copy source code (will be overridden by volume mounts)
-COPY src/ ./src/
+# Copy static files
 COPY index.html ./
+COPY public/ ./public/
+
+# Copy source code (will be overridden by volume mount in development)
+COPY src/ ./src/
+
+# Change ownership to node user (uid 1000)
+RUN chown -R node:node /app
+USER node
 
 EXPOSE 3000
 
-# Run Vite dev server properly
-CMD ["npm", "run", "dev"]
+# Development server with proper environment
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]

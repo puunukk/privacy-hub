@@ -1,4 +1,4 @@
-import type { DockerContainer, DockerInfo, ContainerAction } from '../../types/docker'
+import type { DockerContainer, DockerInfo, ContainerAction } from '@/types/docker'
 
 // State Types
 export interface ContainerState {

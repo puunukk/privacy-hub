@@ -1,0 +1,32 @@
+# NGINX Development Container
+# Purpose: Development environment with frontend dev server proxy
+# Used by: docker-compose.pi-dev.yml
+# Features: HMR support, debug logging, graceful service fallbacks
+
+FROM nginx:alpine
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+# Copy development-specific configuration
+COPY configs/development.conf /etc/nginx/nginx.conf
+
+# Copy SSL certificates for development
+COPY ssl/ /etc/nginx/ssl/
+
+# Copy error pages to default nginx html directory
+COPY html/ /usr/share/nginx/html/
+
+# nginx user already exists in nginx:alpine base image
+# Just ensure proper ownership of directories
+RUN chown -R nginx:nginx /var/cache/nginx /var/log/nginx
+
+# Health check for development
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost/health || exit 1
+
+# Expose ports
+EXPOSE 80 443 53
+
+# Start nginx in foreground
+CMD ["nginx", "-g", "daemon off;"]

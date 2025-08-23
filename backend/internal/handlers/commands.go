@@ -21,19 +21,23 @@ func Commands(w http.ResponseWriter, r *http.Request) {
 	response := models.CommandResponse{}
 	
 	switch command {
+	case "restart-services":
+		response.Status = "shutdown_initiated"
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(response)
+		exec.Command("docker", "compose", "restart").Run() // Direct system shutdown
+
 	case "shutdown":
 		response.Status = "shutdown_initiated"
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(response)
-		cmd := exec.Command("systemctl", "--host", "poweroff", "now")
-		cmd.Run() // Host system shutdown
+		exec.Command("systemctl", "poweroff", "now").Run() // Direct system shutdown
 		
 	case "restart":
 		response.Status = "restart_initiated"
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(response)
-		cmd := exec.Command("systemctl", "--host", "reboot", "now")
-		cmd.Run() // Host system restart
+		exec.Command("systemctl", "reboot", "now").Run() // Direct system restart
 		
 	case "force-shutdown":
 		response.Status = "force_shutdown_initiated"

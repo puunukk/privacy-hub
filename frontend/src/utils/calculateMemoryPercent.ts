@@ -1,4 +1,4 @@
-import type { ContainerStats } from '../types/docker'
+import type { ContainerStats } from '@/types/docker'
 
 export const calculateMemoryPercent = (stats: ContainerStats): number => {
     const { memory_stats } = stats
