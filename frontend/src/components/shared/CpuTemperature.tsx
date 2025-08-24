@@ -41,7 +41,7 @@ const TEMP_THRESHOLDS = {
 
 class CpuTemperature extends PureComponent<CpuTemperatureProps, CpuTemperatureState> {
     private intervalId: NodeJS.Timeout | null = null
-    private readonly UPDATE_INTERVAL = 5000 // 5 seconds
+    private readonly UPDATE_INTERVAL = 60000 // 60 seconds - much more reasonable for temperature
 
     constructor(props: CpuTemperatureProps) {
         super(props)

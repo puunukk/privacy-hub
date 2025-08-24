@@ -1,7 +1,7 @@
 import { apiClient } from '@/api/apiClient'
 import type { DockerInfo } from '@/types/docker'
 
-const endpoint = '/api/docker/info'
+const endpoint = '/docker-api/info'
 
 export async function fetchDockerInfo(): Promise<DockerInfo | null> {
     console.log('fetchDockerInfo called')

@@ -62,10 +62,11 @@ services:
       - "${PIHOLE_DEV_PORT:-8080}:80" # Expose for direct development access
     environment:
       TZ: ${TZ:-Europe/Tallinn}
-      WEBPASSWORD: ${PIHOLE_PASSWORD:-dev123}
+      WEBPASSWORD: ${PIHOLE_PASSWORD}
       FTLCONF_LOCAL_IPV4: ${SERVER_IP}
       PIHOLE_DNS_: ${PIHOLE_DNS:-1.1.1.1;1.0.0.1}
       VIRTUAL_HOST: ${DOMAIN_NAME:-privacy-hub.local}
+      DNSMASQ_USER: root
     volumes:
       - pihole_data:/etc/pihole
       - pihole_dnsmasq:/etc/dnsmasq.d
@@ -81,7 +82,7 @@ services:
     networks:
       - ph_dev
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/admin/api.php", "||", "exit", "1"]
+      test: ["CMD", "curl", "-f", "http://localhost/api/auth"]
       interval: 30s
       timeout: 5s
       retries: 3

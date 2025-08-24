@@ -111,7 +111,7 @@
                 try {
                     const response = await fetch(service.url, {
                         timeout: 3000,
-                        method: 'HEAD'
+                        method: 'GET'
                     });
                     if(response.ok) {
                         indicator.className = 'status-indicator online';
@@ -122,10 +122,10 @@
             }
         }
         
-        // Start checking immediately and every 3 seconds
+        // Start checking immediately and every 60 seconds (much more reasonable)
         document.addEventListener('DOMContentLoaded', () => {
             checkServices();
-            setInterval(checkServices, 3000);
+            setInterval(checkServices, 60000); // 60 seconds instead of 3 seconds
         });
     </script>
 </head>

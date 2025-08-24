@@ -1,9 +1,8 @@
 #!/bin/bash
-# Pi-hole custom entrypoint - simplified approach
+# Pi-hole custom entrypoint
 
-# Print debug info
-echo "=== Pi-hole Entrypoint Debug ==="
-echo "WEBPASSWORD is set: $([ -n "$WEBPASSWORD" ] && echo "YES" || echo "NO")"
+echo "=== Pi-hole Starting ==="
+echo "Password configured: $([ -n "$WEBPASSWORD" ] && echo "YES" || echo "NO")"
 
-# Just use the normal Pi-hole entrypoint
+# Use the standard Pi-hole entrypoint
 exec /usr/local/bin/docker-entrypoint.sh "$@"

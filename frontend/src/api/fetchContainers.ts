@@ -1,7 +1,7 @@
 import { apiClient } from '@/api/apiClient'
 import type { DockerContainer } from '@/types/docker'
 
-const endpoint = '/api/docker/containers'
+const endpoint = '/docker-api/containers'
 
 export async function fetchContainers(): Promise<DockerContainer[]> {
     console.log('fetchContainers called')

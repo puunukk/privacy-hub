@@ -17,6 +17,7 @@ import {
   take 
 } from 'redux-saga/effects'
 import { showNotification, hideNotification } from '@/store/appConfig/appConfigSlice'
+import { checkPiholeHealth } from '@/api/piholeApi'
 
 // Service health state
 interface ServiceHealth {
@@ -64,9 +65,9 @@ function* performHealthCheck(): Generator {
   try {
     // Check all services in parallel with 1 second timeout each
     const [backendHealth, dockerHealth, piholeHealth] = yield race([
-      call(checkServiceHealth, '/api/pi-system/health'),
-      call(checkServiceHealth, '/api/docker/version'), 
-      call(checkServiceHealth, '/api/stats')
+      call(checkServiceHealth, '/pi-system/health'),
+      call(checkServiceHealth, '/docker-api/version'), 
+      call(checkPiholeHealth)
     ])
     
     const serviceHealth: ServiceHealth = {

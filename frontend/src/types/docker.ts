@@ -124,14 +124,26 @@ export interface ContainerStats {
   read: string
   memory_stats: {
     usage?: number
+    max_usage?: number
     limit?: number
+    cache?: number
     stats?: {
       active_anon?: number
       active_file?: number
       anon?: number
       file?: number
+      cache?: number
+      rss?: number
+      rss_huge?: number
+      total_rss?: number
+      mapped_file?: number
+      pgpgin?: number
+      pgpgout?: number
+      pgfault?: number
+      pgmajfault?: number
       inactive_anon?: number
       inactive_file?: number
+      unevictable?: number
       [key: string]: number | undefined
     }
   }

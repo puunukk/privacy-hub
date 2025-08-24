@@ -1,7 +1,7 @@
 import { apiClient } from '@/api/apiClient'
 import type { ContainerAction } from '@/types/docker'
 
-const endpoint = '/api/docker/containers'
+const endpoint = '/docker-api/containers'
 
 export async function executeContainerAction(containerId: string, action: ContainerAction): Promise<void> {
     if (action === 'privacy_reset') {

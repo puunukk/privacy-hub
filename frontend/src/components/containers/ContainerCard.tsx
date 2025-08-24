@@ -8,6 +8,7 @@ import { ContainerNetworkInfo } from './ContainerNetworkInfo'
 import { ContainerResources } from './ContainerResources'
 import { ContainerFooter } from './ContainerFooter'
 import { cn } from '@/utils/cn'
+import { Typography } from '../ui/Typography'
 
 interface ContainerCardProps {
   container: DockerContainer
@@ -50,7 +51,7 @@ export class ContainerCard extends Component<ContainerCardProps> {
 
     return (
       <div className={cardClasses}>
-        <ContainerHeader 
+        <ContainerHeader
           name={name}
           containerId={container.Id}
           containerNames={container.Names}
@@ -59,7 +60,7 @@ export class ContainerCard extends Component<ContainerCardProps> {
           containerStatus={container.Status}
         />
 
-        <ContainerImage 
+        <ContainerImage
           imageName={imageName}
           imageTag={imageTag}
           fullImage={container.Image}
@@ -72,13 +73,15 @@ export class ContainerCard extends Component<ContainerCardProps> {
           <div className="space-y-2">
             <div className="text-xs">
               <div title={`Container was created ${ageInDays} days ago\nCreated: ${createdDate.toLocaleString()}`}>
-                Created: <span className="font-medium text-gray-600 dark:text-gray-400">
+                <Typography.Text color="muted">
+                  Created:</Typography.Text>
+                <Typography.Text color="secondary" className="ml-2">
                   {ageInDays === 0 ? 'Today' : `${ageInDays} days ago`}
-                </span>
+                </Typography.Text>
               </div>
             </div>
 
-            <ContainerNetworkInfo 
+            <ContainerNetworkInfo
               containerIP={containerIP}
               primaryNetwork={primaryNetwork}
               ports={portsWithDetails}
@@ -86,13 +89,13 @@ export class ContainerCard extends Component<ContainerCardProps> {
           </div>
         </div>
 
-        <ContainerResources 
+        <ContainerResources
           containerState={container.State}
           cpuUsage={container?.cpuUsage}
           memUsage={container?.memUsage}
         />
 
-        <ContainerFooter 
+        <ContainerFooter
           containerId={container.Id}
           containerName={name}
           containerImage={container.Image}

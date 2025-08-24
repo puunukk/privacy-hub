@@ -1,18 +1,17 @@
 import type { ApiResponse } from '@/api/types';
 
-const ipUrl: string | undefined = (import.meta as any).env?.VITE_SERVER_URL;
-const nameUrl: string | undefined = (import.meta as any).env?.HOSTNAME ? `${(import.meta as any).env.HOSTNAME}.${(import.meta as any).env.LOCAL_DOMAIN}` : undefined;
-
-const API_URL = nameUrl || ipUrl || '';
+// Since the frontend is served from the same NGINX server, we use relative URLs
+// This avoids CORS issues and works in all environments
+const API_URL = '';
 
 export async function apiClient<T>(
     endpoint: string,
     options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
     try {
+        // Use relative URL - NGINX will proxy to the correct service
         const url = `${API_URL}${endpoint}`;
 
-        // TODO: Add a timeout to the fetch request
         const response = await fetch(url, {
             headers: {
                 'Content-Type': 'application/json',
@@ -20,7 +19,6 @@ export async function apiClient<T>(
             },
             ...options,
         });
-
 
         const data = await response.json();
 

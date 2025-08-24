@@ -46,10 +46,10 @@ class App extends DataManagerComponent<AppProps> {
     return (
       <>
         {/* Error alerts - now from unified data manager */}
-        {/*{data.errors.systemMetrics && <ErrorAlert error={data.errors.systemMetrics} />}
+        {data.errors.systemMetrics && <ErrorAlert error={data.errors.systemMetrics} />}
         {data.errors.containers && <ErrorAlert error={data.errors.containers} />}
-        {data.errors.dockerInfo && <ErrorAlert error={data.errors.dockerInfo} />}*/}
-        {/*globalError && <ErrorAlert error={globalError} />*/}
+        {data.errors.dockerInfo && <ErrorAlert error={data.errors.dockerInfo} />}
+        {globalError && <ErrorAlert error={globalError} />}
 
         {/* Modern Pi Dashboard */}
         <PiDashboard />

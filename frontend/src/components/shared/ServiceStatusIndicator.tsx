@@ -6,6 +6,7 @@
 import { Component } from 'react'
 import { Wifi, WifiOff, Activity, AlertCircle } from 'lucide-react'
 import { cn } from '@/utils/cn'
+import { checkPiholeHealth } from '@/api/piholeApi'
 
 interface ServiceHealth {
   backend: boolean
@@ -48,8 +49,8 @@ export class ServiceStatusIndicator extends Component<ServiceStatusProps, Servic
     // Check immediately
     this.checkServices()
     
-    // Check every 2 seconds (less aggressive than saga)
-    this.interval = setInterval(this.checkServices, 2000)
+    // Check every 45 seconds (much more reasonable)
+    this.interval = setInterval(this.checkServices, 45000)
   }
 
   componentWillUnmount() {
@@ -72,9 +73,9 @@ export class ServiceStatusIndicator extends Component<ServiceStatusProps, Servic
   checkServices = async () => {
     try {
       const [backendResponse, dockerResponse, piholeResponse] = await Promise.allSettled([
-        fetch('/api/pi-system/health', { cache: 'no-cache' }).then(r => r.ok),
-        fetch('/api/docker/version', { cache: 'no-cache' }).then(r => r.ok),
-        fetch('/api/stats', { cache: 'no-cache' }).then(r => r.ok)
+        fetch('/pi-system/health', { method: 'GET', cache: 'no-cache' }).then(r => r.ok),
+        fetch('/docker-api/version', { method: 'GET', cache: 'no-cache' }).then(r => r.ok),
+        checkPiholeHealth()
       ])
       
       this.setState({

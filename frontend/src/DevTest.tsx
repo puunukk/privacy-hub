@@ -27,7 +27,7 @@ export class DevTest extends Component<{}, DevTestState> {
 
   testApi = async () => {
     try {
-      const response = await fetch('/api/pi-system/health')
+      const response = await fetch('/pi-system/health')
       if (response.ok) {
         this.setState({ apiStatus: 'ok' });
       } else {

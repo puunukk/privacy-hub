@@ -75,9 +75,9 @@ export const defaultConfig: AppConfig = {
     timeout: 10000,    // 10 seconds
     retries: 3,
     endpoints: {
-      backend: '/api/pi-system',
-      docker: '/api/docker',
-      pihole: '/admin',
+      backend: '/pi-system',
+      docker: '/docker-api',
+      pihole: '/pi-hole',
       searxng: '/'
     }
   },

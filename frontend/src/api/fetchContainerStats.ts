@@ -1,7 +1,7 @@
 import { apiClient } from '@/api/apiClient'
 import type { ContainerStats } from '@/types/docker'
 
-const endpoint = '/api/docker/containers'
+const endpoint = '/docker-api/containers'
 
 export async function fetchContainerStats(containerId: string): Promise<ContainerStats> {
     const response = await apiClient<ContainerStats>(`${endpoint}/${containerId}/stats?stream=false`)

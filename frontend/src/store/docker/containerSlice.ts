@@ -19,9 +19,9 @@ const initialState: ContainerState = {
   actionLoadingContainerId: null,
   isConnected: false,
   isAutoRefreshing: false,
-  autoRefreshInterval: 10000,
+  autoRefreshInterval: 90000, // 90 seconds - much more reasonable
   isPolling: false,
-  pollInterval: 10000,
+  pollInterval: 90000, // 90 seconds - much more reasonable
   nextPollTime: null,
   totalRequests: 0,
   failedRequests: 0,

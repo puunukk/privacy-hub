@@ -10,6 +10,7 @@
  */
 
 import { dockerApi } from './dockerApi';
+import { checkPiholeHealth } from '@/api/piholeApi';
 
 export interface DataState {
   containers: any[];
@@ -64,12 +65,12 @@ interface DataManagerConfig {
 
 const DEFAULT_CONFIG: DataManagerConfig = {
   intervals: {
-    containers: 10000,       // Every 10 seconds (reduced from 5)
-    dockerInfo: 60000,       // Every minute (increased from 30s)
-    dockerNetworks: 120000,  // Every 2 minutes (networks change rarely)
-    systemMetrics: 5000,     // Every 5 seconds (increased from 3)
-    systemInfo: 120000,      // Every 2 minutes (increased from 1)
-    serviceCheck: 5000,      // Every 5 seconds (increased from 2)
+    containers: 60000,       // Every 60 seconds - much more reasonable
+    dockerInfo: 120000,      // Every 2 minutes
+    dockerNetworks: 300000,  // Every 5 minutes (networks change rarely)
+    systemMetrics: 45000,    // Every 45 seconds - much more reasonable
+    systemInfo: 300000,      // Every 5 minutes
+    serviceCheck: 60000,     // Every 60 seconds - much more reasonable
   },
   retries: {
     max: 2,                  // Reduced retries to avoid spam
@@ -331,7 +332,7 @@ export class DataManager {
    */
   private async fetchSystemMetrics(): Promise<void> {
     const systemMetrics = await this.safeApiCall('systemMetrics', async () => {
-      const response = await fetch('/api/pi-system/metrics');
+      const response = await fetch('/pi-system/metrics');
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.json();
     });
@@ -349,7 +350,7 @@ export class DataManager {
    */
   private async fetchSystemInfo(): Promise<void> {
     const systemInfo = await this.safeApiCall('systemInfo', async () => {
-      const response = await fetch('/api/pi-system/info');
+      const response = await fetch('/pi-system/info');
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.json();
     });
@@ -369,8 +370,9 @@ export class DataManager {
     const checkService = async (url: string): Promise<boolean> => {
       try {
         const response = await fetch(url, { 
-          method: 'HEAD', 
-          signal: AbortSignal.timeout(1000) 
+          method: 'GET', 
+          signal: AbortSignal.timeout(1000),
+          cache: 'no-cache'
         });
         return response.ok;
       } catch {
@@ -379,9 +381,9 @@ export class DataManager {
     };
 
     const [docker, backend, pihole] = await Promise.all([
-      checkService('/api/docker/version'),
-      checkService('/api/pi-system/health'), 
-      checkService('/api/stats')
+      checkService('/docker-api/version'),
+      checkService('/pi-system/health'), 
+      checkPiholeHealth()
     ]);
 
     const currentServices = this.data.services;

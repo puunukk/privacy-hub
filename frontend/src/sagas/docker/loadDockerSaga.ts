@@ -13,8 +13,10 @@ import { ContainerActionTypes } from '@/store/docker/types'
 
 import { calculateCpuPercent } from '@/utils/calculateCpuPercent'
 import { calculateMemoryPercent } from '@/utils/calculateMemoryPercent'
+import { calculateMemoryUsage, getMemoryLimit } from '@/utils/calculateMemoryUsage'
 import { formatBytes } from '@/utils/formatBytes'
 import { logger } from '@/utils/logger'
+import { debugDockerStats } from '@/utils/debugDockerStats'
 import type { ContainerWithStats } from './types'
 
 // Main Docker data loading saga
@@ -42,24 +44,23 @@ function* loadDockerDataSaga(): Generator<any, void, any> {
                         logger.debug('Container stats fetched', { name: container.Names[0], hasStats: !!stats })
 
                         if (stats) {
+                            // Debug raw stats in development
+                            debugDockerStats(container.Names[0], stats)
+                            
                             const cpuPercent = calculateCpuPercent(stats)
-                            const memPercent = calculateMemoryPercent(stats)
-
-                            // Try to get memory usage from different fields
-                            let memUsage = stats.memory_stats?.usage || 0
-
-                            // If usage is 0, try to calculate from stats fields
-                            if (memUsage === 0 && stats.memory_stats?.stats) {
-                                const memStats = stats.memory_stats.stats
-                                // Try different memory fields that might be available
-                                memUsage = memStats.anon || memStats.active_anon || memStats.file || 0
-                            }
+                            
+                            // Use improved memory calculation that handles cgroup v2
+                            const memUsage = calculateMemoryUsage(stats)
+                            const memLimit = getMemoryLimit(stats)
+                            const memPercent = memLimit > 0 ? (memUsage / memLimit) * 100 : 0
 
                             logger.debug('Calculated container stats', { 
                                 name: container.Names[0], 
-                                cpuPercent, 
-                                memPercent, 
-                                memUsage: formatBytes(memUsage) 
+                                cpuPercent: cpuPercent.toFixed(1), 
+                                memUsage: formatBytes(memUsage),
+                                memPercent: memPercent.toFixed(1),
+                                memLimit: formatBytes(memLimit),
+                                rawMemStats: stats.memory_stats
                             })
 
                             return {

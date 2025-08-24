@@ -74,19 +74,19 @@ export class NetworkConnectivityTest extends Component<{}, NetworkConnectivityTe
     }))
 
     // Test backend health endpoint
-    const backendTest = await this.testEndpoint('/api/pi-system/health')
+    const backendTest = await this.testEndpoint('/pi-system/health')
     this.setState(prev => ({
       tests: { ...prev.tests, backendHealth: backendTest }
     }))
 
     // Test Docker API
-    const dockerTest = await this.testEndpoint('/api/docker/version')
+    const dockerTest = await this.testEndpoint('/docker-api/version')
     this.setState(prev => ({
       tests: { ...prev.tests, dockerApi: dockerTest }
     }))
 
     // Test system metrics
-    const metricsTest = await this.testEndpoint('/api/pi-system/metrics')
+    const metricsTest = await this.testEndpoint('/pi-system/metrics')
     this.setState(prev => ({
       tests: { ...prev.tests, systemMetrics: metricsTest }
     }))
@@ -190,9 +190,9 @@ export class NetworkConnectivityTest extends Component<{}, NetworkConnectivityTe
           </p>
           <ul className="text-xs text-gray-500 dark:text-gray-500 mt-2 space-y-1">
             <li>• NGINX Health: /health</li>
-            <li>• Backend API: /api/pi-system/health</li>
-            <li>• Docker API: /api/docker/version</li>
-            <li>• System Metrics: /api/pi-system/metrics</li>
+            <li>• Backend API: /pi-system/health</li>
+            <li>• Docker API: /docker-api/version</li>
+            <li>• System Metrics: /pi-system/metrics</li>
           </ul>
         </div>
       </div>

@@ -5,6 +5,8 @@ import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react'
 import { hideNotification } from '@/store/appConfig/appConfigSlice'
 import type { RootState } from '@/store'
 import type { Notification } from '@/store/appConfig/types'
+import { Typography } from '../ui/Typography'
+import { cn } from '@/utils/cn'
 
 interface NotificationManagerProps {
   notifications: Notification[]
@@ -41,7 +43,7 @@ class NotificationManager extends Component<NotificationManagerProps, Notificati
   private setupAutoDismiss = () => {
     const { notifications } = this.props
     const { dismissTimers } = this.state
-    
+
     // Clear existing timers for notifications that no longer exist
     const currentIds = new Set(notifications.map(n => n.id))
     dismissTimers.forEach((timer, id) => {
@@ -58,7 +60,7 @@ class NotificationManager extends Component<NotificationManagerProps, Notificati
           this.handleDismiss(notification.id)
           dismissTimers.delete(notification.id)
         }, 5000) // Auto-dismiss after 5 seconds
-        
+
         dismissTimers.set(notification.id, timer)
       }
     })
@@ -96,7 +98,7 @@ class NotificationManager extends Component<NotificationManagerProps, Notificati
 
   private handleDismiss = (id: string) => {
     const { dismissTimers } = this.state
-    
+
     // Clear the timer if it exists
     const timer = dismissTimers.get(id)
     if (timer) {
@@ -104,7 +106,7 @@ class NotificationManager extends Component<NotificationManagerProps, Notificati
       dismissTimers.delete(id)
       this.setState({ dismissTimers })
     }
-    
+
     this.props.dispatch(hideNotification({ id }))
   }
 
@@ -122,25 +124,29 @@ class NotificationManager extends Component<NotificationManagerProps, Notificati
       return null
     }
 
+    const notificationStyles = (notification: Notification) => cn(
+      'border rounded-lg shadow-lg p-4 backdrop-blur-sm',
+      'transition-all duration-300 transform animate-in slide-in-from-right',
+      this.getNotificationStyles(notification.type)
+    )
+
     return (
       <div className="fixed bottom-4 right-4 space-y-2 z-50 max-w-sm">
         {activeNotifications.map((notification) => (
           <div
             key={notification.id}
-            className={`border rounded-lg shadow-lg p-4 transition-all duration-300 transform animate-in slide-in-from-right ${this.getNotificationStyles(
-              notification.type
-            )}`}
+            className={notificationStyles(notification)}
           >
             <div className="flex items-start space-x-3">
               {this.getNotificationIcon(notification.type)}
 
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium">
+                <Typography.Title level={5} weight="medium">
                   {notification.title}
-                </div>
-                <div className="text-sm mt-1 opacity-90">
+                </Typography.Title>
+                <Typography.Paragraph size="sm" className="mt-1 opacity-90">
                   {notification.message}
-                </div>
+                </Typography.Paragraph>
               </div>
 
               <button

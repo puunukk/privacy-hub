@@ -1,6 +1,6 @@
 import { apiClient } from '@/api/apiClient'
 
-const endpoint = '/api/pi-system/debug'
+const endpoint = '/pi-system/debug'
 
 export async function fetchSystemDebug(): Promise<any> {
     console.log('fetchSystemDebug called')

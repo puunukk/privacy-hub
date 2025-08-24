@@ -50,10 +50,10 @@ export class SystemActionsModal extends Component<SystemActionsModalProps, Syste
     }
   }
 
-  handleReboot = () => this.executeAction('Reboot', '/api/pi-system/reboot')
-  handleShutdown = () => this.executeAction('Shutdown', '/api/pi-system/shutdown')
-  handleForceShutdown = () => this.executeAction('Force Shutdown', '/api/pi-system/force-shutdown')
-  handleRestart = () => this.executeAction('Restart Services', '/api/pi-system/restart')
+  handleReboot = () => this.executeAction('Reboot', '/pi-system/reboot')
+  handleShutdown = () => this.executeAction('Shutdown', '/pi-system/shutdown')
+  handleForceShutdown = () => this.executeAction('Force Shutdown', '/pi-system/force-shutdown')
+  handleRestart = () => this.executeAction('Restart Services', '/pi-system/restart')
 
   render() {
     const { isOpen, onClose, hostname } = this.props
