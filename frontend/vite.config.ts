@@ -59,13 +59,22 @@ export default defineConfig({
     port: 3000,
     strictPort: true,  // Must use port 3000 for Docker
     hmr: false, // Disable HMR entirely in development to avoid WebSocket issues
-    allowedHosts: [
-      'all',
-      'otsi',
-      'otsi.local',
-      'localhost',
-      '192.168.1.120',
-    ],  // Allow all hosts in development
+    //hmr: {
+    //  // Configure HMR for your proxy setup
+    //  host: 'localhost',
+    //  port: 3000,
+    //  // Disable WebSocket for HMR, use polling instead
+    //  // This prevents the failing WebSocket connections
+    //  clientPort: false
+    //},
+    allowedHosts: true,
+    //allowedHosts: [
+    //  'all',
+    //  'otsi',
+    //  'otsi.local',
+    //  'localhost',
+    //  '192.168.1.120',
+    //],  // Allow all hosts in development
     watch: {
       usePolling: true,  // Required for Docker volume mounts
       interval: 1000     // Check for changes every second

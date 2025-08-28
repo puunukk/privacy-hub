@@ -1,6 +1,7 @@
 import { Component } from 'react'
 import { HardDrive, Database } from 'lucide-react'
 import { cn } from '@/utils/cn'
+import { formatBytes } from '@/utils/systemUtils'
 import type { StorageInfo } from '@/types/metrics'
 
 interface StorageOverviewProps {
@@ -9,13 +10,6 @@ interface StorageOverviewProps {
 }
 
 export class StorageOverview extends Component<StorageOverviewProps> {
-  formatBytes = (bytes: number): string => {
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-  }
 
   render() {
     const { storage, isLoading = false } = this.props
@@ -110,8 +104,8 @@ export class StorageOverview extends Component<StorageOverviewProps> {
                   </div>
                   
                   <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                    <span>{this.formatBytes(partition.used)} used</span>
-                    <span>{this.formatBytes(partition.free)} free</span>
+                    <span>{formatBytes(partition.used)} used</span>
+                    <span>{formatBytes(partition.free)} free</span>
                   </div>
                 </div>
               )
@@ -135,7 +129,7 @@ export class StorageOverview extends Component<StorageOverviewProps> {
                       {device.name} ({device.type})
                     </span>
                     <span className="text-gray-500 dark:text-gray-400">
-                      {this.formatBytes(device.size)}
+                      {formatBytes(device.size)}
                     </span>
                   </div>
                 ))}

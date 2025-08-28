@@ -32,7 +32,25 @@ const appConfigSlice = createSlice({
             state.status = action.payload
         },
         setTheme: (state, action: PayloadAction<{ theme: Theme }>) => {
-            state.theme = action.payload.theme
+            const theme = action.payload.theme
+            state.theme = theme
+            
+            // Apply theme to DOM immediately (side effect in reducer is OK for DOM sync)
+            let shouldBeDark = false
+            if (theme === 'auto') {
+                shouldBeDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+            } else {
+                shouldBeDark = theme === 'dark'
+            }
+            
+            if (shouldBeDark) {
+                document.documentElement.classList.add('dark')
+            } else {
+                document.documentElement.classList.remove('dark')
+            }
+            
+            // Persist to localStorage
+            localStorage.setItem('theme', theme)
         },
         showNotification: (state, action: PayloadAction<Notification>) => {
             state.notifications.push(action.payload)

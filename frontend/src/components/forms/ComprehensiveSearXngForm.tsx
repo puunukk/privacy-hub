@@ -1,6 +1,8 @@
 /**
  * @fileoverview Comprehensive SearXNG configuration form with ALL features from OriginalVer.tsx
  * @author Privacy Hub Dashboard
+ * 
+ * ⚠️ NOT IN USE! - Duplicate of OriginalVer.tsx, can be removed
  */
 
 import { Component } from 'react';

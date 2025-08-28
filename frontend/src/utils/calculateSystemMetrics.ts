@@ -4,11 +4,11 @@ import type { SystemMetrics } from '@/store/metrics/types'
  * Calculate memory usage percentage from system metrics
  */
 export const calculateSystemMemoryPercent = (systemMetrics: SystemMetrics | null): number => {
-    if (!systemMetrics) return 0
+    if (!systemMetrics?.memory) return 0
 
-    const { memory_total, memory_used } = systemMetrics
-    if (memory_total > 0) {
-        return (memory_used / memory_total) * 100
+    const { total, used } = systemMetrics.memory
+    if (total > 0) {
+        return (used / total) * 100
     }
     return 0
 }

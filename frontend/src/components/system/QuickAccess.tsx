@@ -2,6 +2,7 @@ import { Component, ReactNode } from 'react'
 import { Shield, Search, Globe, ExternalLink, Settings, FileCode } from 'lucide-react'
 import { SearXngConfig } from './SearxngConfig'
 import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
 import { SearXngModalForm, SearXngSettings } from '@/components/forms'
 import SearXNGSettingsForm from '@/components/forms/OriginalVer'
 
@@ -137,30 +138,14 @@ export class QuickAccess extends Component<{}, QuickAccessState> {
         </div>
 
         {/* SearXNG Config Modal */}
-        {showSearxngConfig && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={this.closeSearxngConfig}
-          >
-            <div
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">SearXNG ConfigurationXX</h2>
-                <button
-                  type="button"
-                  onClick={this.closeSearxngConfig}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  <span className="sr-only">Close</span>
-                  ✕
-                </button>
-              </div>
-              <SearXngConfig />
-            </div>
-          </div>
-        )}
+        <Modal
+          isOpen={showSearxngConfig}
+          onClose={this.closeSearxngConfig}
+          title="SearXNG Configuration"
+          size="lg"
+        >
+          <SearXngConfig />
+        </Modal>
 
         {/* New SearXNG Config Modal */}
         <SearXngModalForm
@@ -171,33 +156,14 @@ export class QuickAccess extends Component<{}, QuickAccessState> {
           size="lg"
         />
 
-        {/* Comprehensive SearXNG Config Modal */}
-        {showComprehensiveConfig && (
-          <div
-            className="fixed inset-0 bg-gray-900/75 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            onClick={this.closeComprehensiveConfig}
-          >
-            <div
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-7xl w-full max-h-[95vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">SearXNG Configuration (Comprehensive)</h2>
-                <button
-                  type="button"
-                  onClick={this.closeComprehensiveConfig}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  <span className="sr-only">Close</span>
-                  ✕
-                </button>
-              </div>
-              <div className="overflow-y-auto max-h-[calc(95vh-4rem)]">
-                <SearXNGSettingsForm />
-              </div>
-            </div>
-          </div>
-        )}
+        <Modal
+          isOpen={showComprehensiveConfig}
+          onClose={this.closeComprehensiveConfig}
+          title="SearXNG Configuration (Comprehensive)"
+          size="lg"
+        >
+          <SearXNGSettingsForm />
+        </Modal>
       </>
     )
   }

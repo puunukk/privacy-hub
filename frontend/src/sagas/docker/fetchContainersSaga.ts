@@ -11,7 +11,8 @@ import {
 
 import { calculateCpuPercent } from '@/utils/calculateCpuPercent'
 import { calculateMemoryPercent } from '@/utils/calculateMemoryPercent'
-import { formatBytes } from '@/utils/formatBytes'
+import { calculateMemoryUsage } from '@/utils/calculateMemoryUsage'
+import { formatBytes } from '@/utils/systemUtils'
 import type { ContainerWithStats } from './types'
 
 function* fetchContainersSaga(): Generator<any, void, any> {
@@ -34,16 +35,7 @@ function* fetchContainersSaga(): Generator<any, void, any> {
                         if (stats) {
                             const cpuPercent = calculateCpuPercent(stats)
                             const memPercent = calculateMemoryPercent(stats)
-
-                            // Try to get memory usage from different fields
-                            let memUsage = stats.memory_stats?.usage || 0
-
-                            // If usage is 0, try to calculate from stats fields
-                            if (memUsage === 0 && stats.memory_stats?.stats) {
-                                const memStats = stats.memory_stats.stats
-                                // Try different memory fields that might be available
-                                memUsage = memStats.anon || memStats.active_anon || memStats.file || 0
-                            }
+                            const memUsage = calculateMemoryUsage(stats)
 
                             console.log('Calculated stats:', { cpuPercent, memPercent, memUsage, rawMemStats: stats.memory_stats })
 

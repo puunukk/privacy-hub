@@ -25,7 +25,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = 'primary', size = 'md', className, children, ...props }, ref) => {
     const classes = cn(
       'inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none',
-      'transform hover:scale-[1.02] active:scale-[0.98]',
+      'transform scale-[0.98] hover:scale-[1] active:scale-[0.98]',
       buttonVariants[variant],
       buttonSizes[size],
       className

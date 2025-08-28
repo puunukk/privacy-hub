@@ -4,6 +4,7 @@ import { Dispatch } from '@reduxjs/toolkit'
 import { RefreshCw, Clock, AlertCircle, Wifi, WifiOff, Info, Server } from 'lucide-react'
 import { ContainerActionTypes } from '@/sagas/docker/types'
 import { Button } from '@/components/ui/Button'
+import { Typography } from '@/components/ui/Typography'
 import type { RootState } from '@/store'
 
 interface StatusIndicatorsProps {
@@ -140,12 +141,12 @@ class StatusIndicators extends Component<StatusIndicatorsProps, StatusIndicators
         {/* Main Status Indicator */}
         <div className={`flex items-center space-x-2 px-3 py-1 rounded-lg border ${this.getStatusColor()}`}>
           {this.getStatusIcon()}
-          <span className="text-sm font-medium">{this.getStatusText()}</span>
+          <Typography.Text size="sm" weight="medium">{this.getStatusText()}</Typography.Text>
 
           {isPolling && timeUntilNext > 0 && (
             <div className="flex items-center space-x-1">
               <Clock className="w-3 h-3" />
-              <span className="text-xs">{this.formatTime(timeUntilNext)}</span>
+              <Typography.Text size="xs">{this.formatTime(timeUntilNext)}</Typography.Text>
             </div>
           )}
         </div>
@@ -189,54 +190,54 @@ class StatusIndicators extends Component<StatusIndicatorsProps, StatusIndicators
 
             <div className="space-y-2 text-xs">
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Connection:</span>
-                <span className={`font-medium ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
+                <Typography.Text color="muted">Connection:</Typography.Text>
+                <Typography.Text weight="medium" color={isConnected ? 'success' : 'danger'}>
                   {isConnected ? 'Connected' : 'Disconnected'}
-                </span>
+                </Typography.Text>
               </div>
 
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Polling:</span>
-                <span className={`font-medium ${isPolling ? 'text-green-600' : 'text-gray-600'}`}>
+                <Typography.Text color="muted">Polling:</Typography.Text>
+                <Typography.Text weight="medium" color={isPolling ? 'success' : 'secondary'}>
                   {isPolling ? 'Active' : 'Stopped'}
-                </span>
+                </Typography.Text>
               </div>
 
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Interval:</span>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <Typography.Text color="muted">Interval:</Typography.Text>
+                <Typography.Text weight="medium">
                   {pollInterval / 1000}s
-                </span>
+                </Typography.Text>
               </div>
 
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Last Update:</span>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <Typography.Text color="muted">Last Update:</Typography.Text>
+                <Typography.Text weight="medium">
                   {this.formatLastUpdate()}
-                </span>
+                </Typography.Text>
               </div>
 
               {nextPollTime && (
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Next Update:</span>
-                  <span className="font-medium text-gray-900 dark:text-white">
+                  <Typography.Text color="muted">Next Update:</Typography.Text>
+                  <Typography.Text weight="medium">
                     {timeUntilNext > 0 ? this.formatTime(timeUntilNext) : 'Now'}
-                  </span>
+                  </Typography.Text>
                 </div>
               )}
 
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Total Requests:</span>
-                <span className="font-medium text-gray-900 dark:text-white">
+                <Typography.Text color="muted">Total Requests:</Typography.Text>
+                <Typography.Text weight="medium">
                   {totalRequests}
-                </span>
+                </Typography.Text>
               </div>
 
               <div className="flex justify-between">
-                <span className="text-gray-500 dark:text-gray-400">Failed Requests:</span>
-                <span className={`font-medium ${failedRequests > 0 ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>
+                <Typography.Text color="muted">Failed Requests:</Typography.Text>
+                <Typography.Text weight="medium" color={failedRequests > 0 ? 'danger' : 'primary'}>
                   {failedRequests}
-                </span>
+                </Typography.Text>
               </div>
 
               {errorMessage && (
@@ -254,7 +255,7 @@ class StatusIndicators extends Component<StatusIndicatorsProps, StatusIndicators
             {/* Success Rate */}
             <div className="pt-3 border-t border-gray-200 dark:border-gray-600 mt-3">
               <div className="flex justify-between items-center">
-                <span className="text-gray-500 dark:text-gray-400 text-xs">Success Rate:</span>
+                <Typography.Text color="muted" size="xs">Success Rate:</Typography.Text>
                 <div className="flex items-center space-x-2">
                   <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div
@@ -262,9 +263,9 @@ class StatusIndicators extends Component<StatusIndicatorsProps, StatusIndicators
                       style={{ width: `${successRate}%` }}
                     />
                   </div>
-                  <span className="text-xs font-medium text-gray-900 dark:text-white">
+                  <Typography.Text size="xs" weight="medium">
                     {successRate}%
-                  </span>
+                  </Typography.Text>
                 </div>
               </div>
             </div>

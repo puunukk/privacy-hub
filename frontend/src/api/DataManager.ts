@@ -11,6 +11,7 @@
 
 import { dockerApi } from './dockerApi';
 import { checkPiholeHealth } from '@/api/piholeApi';
+import { formatBytes } from '@/utils/systemUtils';
 
 export interface DataState {
   containers: any[];
@@ -224,7 +225,7 @@ export class DataManager {
               
               const stats = await Promise.race([statsPromise, timeoutPromise]) as any;
               const cpuPercent = this.calculateCPUPercent(stats);
-              const memoryUsage = stats.memory_stats?.usage || 0;
+              const memoryUsage = this.calculateMemoryUsage(stats);
               const memoryLimit = stats.memory_stats?.limit || 0;
               
               return {
@@ -232,8 +233,8 @@ export class DataManager {
                 // Formatted properties for UI components
                 cpuUsage: `${cpuPercent.toFixed(1)}%`,
                 memUsage: memoryLimit > 0 ? 
-                  `${this.formatBytes(memoryUsage)} / ${this.formatBytes(memoryLimit)}` : 
-                  this.formatBytes(memoryUsage),
+                  `${formatBytes(memoryUsage)} / ${formatBytes(memoryLimit)}` : 
+                  formatBytes(memoryUsage),
                 // Raw stats for other uses
                 Stats: {
                   memory_usage: memoryUsage,
@@ -278,17 +279,76 @@ export class DataManager {
   }
 
   /**
-   * Format bytes to human readable string
+   * Calculate actual memory usage from Docker stats
+   * Handles both cgroup v1 and v2 formats
    */
-  private formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 B';
+  private calculateMemoryUsage(stats: any): number {
+    const memory_stats = stats.memory_stats;
     
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    if (!memory_stats) {
+      return 0;
+    }
     
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+    // Method 1: Direct usage field (cgroup v1)
+    if (memory_stats.usage && memory_stats.usage > 0) {
+      // In cgroup v1, we need to subtract cache to get actual memory usage
+      const cache = memory_stats.stats?.cache || 0;
+      return Math.max(0, memory_stats.usage - cache);
+    }
+    
+    // Method 2: From detailed stats (cgroup v2 or when usage is not available)
+    if (memory_stats.stats) {
+      const memStats = memory_stats.stats;
+      
+      // Try different fields that represent memory usage
+      // Priority order based on accuracy
+      
+      // RSS (Resident Set Size) - most accurate for actual memory usage
+      if (memStats.rss && memStats.rss > 0) {
+        return memStats.rss;
+      }
+      
+      // Total RSS 
+      if (memStats.total_rss && memStats.total_rss > 0) {
+        return memStats.total_rss;
+      }
+      
+      // Anonymous memory + file cache
+      if ((memStats.anon || memStats.file)) {
+        const anon = memStats.anon || 0;
+        const file = memStats.file || 0;
+        // For actual usage, we typically want anonymous memory
+        // File cache can be reclaimed, so it's less critical
+        return anon > 0 ? anon : (anon + file);
+      }
+      
+      // Active + Inactive anonymous memory
+      if (memStats.active_anon || memStats.inactive_anon) {
+        const activeAnon = memStats.active_anon || 0;
+        const inactiveAnon = memStats.inactive_anon || 0;
+        return activeAnon + inactiveAnon;
+      }
+      
+      // Fallback: Any value we can find
+      const possibleFields = [
+        'rss_huge',
+        'mapped_file',
+        'active_file',
+        'inactive_file',
+        'unevictable'
+      ];
+      
+      for (const field of possibleFields) {
+        const value = memStats[field];
+        if (value && value > 0) {
+          return value;
+        }
+      }
+    }
+    
+    return 0;
   }
+
 
   /**
    * Fetch Docker info with caching
@@ -350,7 +410,7 @@ export class DataManager {
    */
   private async fetchSystemInfo(): Promise<void> {
     const systemInfo = await this.safeApiCall('systemInfo', async () => {
-      const response = await fetch('/pi-system/info');
+      const response = await fetch('/pi-system/system');
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.json();
     });
@@ -532,5 +592,42 @@ export class DataManager {
 
 /**
  * Singleton data manager instance
+ * 
+ * DISABLED: DataManager is replaced by UnifiedLoopManager saga
+ * All polling logic is now centralized in /sagas/unifiedLoopManager.ts
+ * This provides better control, UI management, and proper intervals.
  */
-export const dataManager = new DataManager();
+// export const dataManager = new DataManager();
+
+// Temporary stub to prevent errors during migration
+export const dataManager = {
+  start: () => console.log('⚠️ DataManager.start() called - now handled by UnifiedLoopManager'),
+  stop: () => console.log('⚠️ DataManager.stop() called - now handled by UnifiedLoopManager'),
+  subscribe: (_callback: any) => () => {},
+  getData: () => ({
+    containers: [],
+    dockerInfo: null,
+    dockerNetworks: [],
+    systemMetrics: null,
+    systemInfo: null,
+    services: { docker: false, backend: false, pihole: false },
+    lastUpdated: {
+      containers: 0,
+      dockerInfo: 0,
+      dockerNetworks: 0,
+      systemMetrics: 0,
+      systemInfo: 0
+    },
+    errors: {}
+  }),
+  refresh: () => Promise.resolve(),
+  getStats: () => ({ 
+    isRunning: false, 
+    activeTimers: 0,
+    config: { intervals: {} },
+    lastUpdated: {},
+    errors: {},
+    subscribers: 0
+  }),
+  updateConfig: (_config: any) => {}
+};

@@ -11,7 +11,11 @@ import { Server, Wifi, WifiOff, AlertCircle, Grid3X3, List } from 'lucide-react'
 import { ContainerRow, ContainerLogs } from '@/components/containers'
 import { Button } from '@/components/ui/Button'
 import { Typography } from '@/components/ui/Typography'
-import { DataManagerComponent } from '@/api/DataManagerConnector'
+import { Component } from 'react'
+import { connect } from 'react-redux'
+import { Dispatch } from '@reduxjs/toolkit'
+import type { RootState } from '@/store'
+// ContainerActionTypes removed - no longer needed since data fetching is handled by parent component
 import { cn } from '@/utils/cn'
 
 interface ContainersTableState {
@@ -19,17 +23,28 @@ interface ContainersTableState {
     containerId: string
     containerName: string
   } | null
+}
+
+interface ContainersTableProps {
+  dispatch: Dispatch
+  containers: any[]
+  dockerInfo: any
+  isLoading: boolean
+  error?: string | null
   viewMode: 'grid' | 'list'
 }
 
-export class ContainersTable extends DataManagerComponent<{}, ContainersTableState> {
-  constructor(props: {}) {
+export class ContainersTable extends Component<ContainersTableProps, ContainersTableState> {
+  constructor(props: ContainersTableProps) {
     super(props)
     this.state = {
-      ...this.state,
-      showLogsFor: null,
-      viewMode: 'list'
+      showLogsFor: null
     }
+  }
+
+  componentDidMount() {
+    // Data fetching is handled by PiDashboard parent component
+    // This avoids duplicate API calls on the same page
   }
 
   private showLogs = (containerId: string, containerName: string) => {
@@ -46,18 +61,9 @@ export class ContainersTable extends DataManagerComponent<{}, ContainersTableSta
     }))
   }
 
-  private toggleViewMode = () => {
-    this.setState(prev => ({
-      ...prev,
-      viewMode: prev.viewMode === 'grid' ? 'list' : 'grid'
-    }))
-  }
-
   // Connection status indicator
   private renderConnectionStatus = () => {
-    const { data } = this.state
-    const containers = data.containers
-    const error = data.errors.containers
+    const { containers, error } = this.props
     const hasError = !!error
     const isEmpty = !containers || containers.length === 0
 
@@ -90,18 +96,12 @@ export class ContainersTable extends DataManagerComponent<{}, ContainersTableSta
 
   // Docker info panel
   private renderDockerInfo = () => {
-    const { data } = this.state
-    const dockerInfo = data.dockerInfo
+    const { dockerInfo } = this.props
     if (!dockerInfo) return null
 
     return (
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <div className="flex items-center space-x-2 mb-2">
-          <Server className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          <Typography.Title level={3} weight="semibold" color="primary">
-            Docker System Information
-          </Typography.Title>
-        </div>
+        {/* Title removed - handled by DockerContainersSection wrapper */}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
@@ -134,14 +134,18 @@ export class ContainersTable extends DataManagerComponent<{}, ContainersTableSta
   }
 
   render() {
-    const { data, isLoading } = this.state
-    const containers = data.containers
-    const dockerInfo = data.dockerInfo
-    const error = data.errors.containers
+    const { containers, dockerInfo, isLoading, error } = this.props
+
+    const wrapperClassName = cn(
+      'bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 transition-colors duration-300',
+      'p-4'
+    )
 
     return (
-      <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 transition-colors duration-300">
+      <>
         {/* Header */}
+        {this.renderConnectionStatus()}
+        {/* 
         <div className="border-b border-gray-200 dark:border-gray-700 p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -156,11 +160,11 @@ export class ContainersTable extends DataManagerComponent<{}, ContainersTableSta
 
             <div className="flex items-center space-x-2">
               <Button
-                variant={this.state.viewMode === 'list' ? 'primary' : 'secondary'}
+                variant={this.props.viewMode === 'list' ? 'primary' : 'secondary'}
                 size="sm"
                 onClick={this.toggleViewMode}
               >
-                {this.state.viewMode === 'list' ? (
+                {this.props.viewMode === 'list' ? (
                   <><List className="w-4 h-4 mr-2" /> List View</>
                 ) : (
                   <><Grid3X3 className="w-4 h-4 mr-2" /> Grid View</>
@@ -169,9 +173,9 @@ export class ContainersTable extends DataManagerComponent<{}, ContainersTableSta
             </div>
           </div>
         </div>
-
+        */}
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4">
           {/* Docker Info */}
           {dockerInfo && (
             <div className="mb-6">
@@ -225,14 +229,14 @@ export class ContainersTable extends DataManagerComponent<{}, ContainersTableSta
           {containers && containers.length > 0 && (
             <div className={cn(
               "space-y-4",
-              this.state.viewMode === 'grid' && "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 space-y-0"
+              this.props.viewMode === 'grid' && "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 space-y-0"
             )}>
               {containers.map((container) => (
                 <ContainerRow
                   key={container.Id}
                   container={container}
                   onShowLogs={() => this.showLogs(container.Id, container.Names?.[0] || container.Id)}
-                  viewMode={this.state.viewMode}
+                  viewMode={this.props.viewMode}
                 />
               ))}
             </div>
@@ -247,7 +251,22 @@ export class ContainersTable extends DataManagerComponent<{}, ContainersTableSta
             onClose={this.hideLogs}
           />
         )}
-      </div>
+      </>
     )
   }
 }
+
+// Connect to Redux
+const mapStateToProps = (state: RootState) => ({
+  containers: state.containers?.containers || [],
+  dockerInfo: state.containers?.dockerInfo || null,
+  isLoading: state.containers?.isLoading || false,
+  error: state.containers?.error || undefined
+})
+
+const mapDispatchToProps = (dispatch: Dispatch) => ({
+  dispatch
+})
+
+// Export connected component
+export const ConnectedContainersTable = connect(mapStateToProps, mapDispatchToProps)(ContainersTable)

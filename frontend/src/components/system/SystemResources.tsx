@@ -4,7 +4,7 @@ import { Info, HardDrive, MemoryStick } from 'lucide-react'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Typography } from '@/components/ui/Typography'
 import { cn } from '@/utils/cn'
-import { formatBytes } from '@/utils/formatBytes'
+import { formatBytes } from '@/utils/systemUtils'
 import { calculateSystemStoragePercent, calculateSystemMemoryPercent } from '@/utils/calculateSystemMetrics'
 
 interface SystemResourcesProps {
@@ -126,8 +126,8 @@ export class SystemResources extends PureComponent<SystemResourcesProps> {
                     <div className="space-y-4">
                         <ProgressBar
                             label="Memory Usage"
-                            used={systemMetrics.memory_used}
-                            total={systemMetrics.memory_total}
+                            used={systemMetrics.memory?.used || 0}
+                            total={systemMetrics.memory?.total || 0}
                             unit="MB"
                             color="blue"
                         />
@@ -135,26 +135,26 @@ export class SystemResources extends PureComponent<SystemResourcesProps> {
                         <div className="grid grid-cols-3 gap-4">
                             <this.MetricValue
                                 label="Total"
-                                value={formatBytes(systemMetrics.memory_total * 1024)}
+                                value={formatBytes((systemMetrics.memory?.total || 0) * 1024)}
                                 unit=""
                                 description="Total physical memory installed in the system"
                             />
                             <this.MetricValue
                                 label="Used"
-                                value={formatBytes(systemMetrics.memory_used * 1024)}
+                                value={formatBytes((systemMetrics.memory?.used || 0) * 1024)}
                                 unit=""
                                 description={`${calculateSystemMemoryPercent(systemMetrics).toFixed(1)}% of total memory is currently in use`}
                             />
                             <this.MetricValue
                                 label="Available"
-                                value={formatBytes(systemMetrics.memory_free * 1024)}
+                                value={formatBytes((systemMetrics.memory?.free || 0) * 1024)}
                                 unit=""
                                 description="Memory available for new applications and processes"
                             />
                         </div>
 
                         {/* Memory info text - only show if there's memory data */}
-                        {systemMetrics.memory_total > 0 && (
+                        {(systemMetrics.memory?.total || 0) > 0 && (
                             <div className="text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded p-2">
                                 <Typography.Text size="xs" color="muted">
                                     Memory data is read from /proc/meminfo and updated in real-time.

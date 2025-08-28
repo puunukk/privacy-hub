@@ -8,9 +8,10 @@ import {
 } from '@/store/systemInfo/systemInfoSlice'
 import { logger } from '@/utils/logger'
 
-function* loadSystemInfoSaga(): Generator {
+export function* loadSystemInfoSaga(): Generator {
+    const timerId = `SystemInfo fetch ${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     logger.debug('loadSystemInfoSaga started')
-    logger.time('SystemInfo fetch')
+    logger.time(timerId)
 
     try {
         const info: any = yield call(fetchSystemInfo)
@@ -18,14 +19,14 @@ function* loadSystemInfoSaga(): Generator {
         logger.debug('System info received:', { info, debug })
         yield put(fetchSystemInfoSuccess({ data: { ...info, ...debug }, timestamp: Date.now() }))
         logger.debug('System info success action dispatched')
-        logger.timeEnd('SystemInfo fetch')
-    } catch (error) {
+    }
+    catch (error) {
         logger.error('System info fetch error:', error)
-        logger.timeEnd('SystemInfo fetch')
         const timestamp = Date.now()
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch system info'
         yield put(fetchSystemInfoFailure({ error: errorMessage, timestamp }))
     }
+    finally {
+        logger.timeEnd(timerId)
+    }
 }
-
-export { loadSystemInfoSaga }

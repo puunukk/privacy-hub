@@ -4,6 +4,7 @@
  */
 
 import type { ContainerStats } from '@/types/docker'
+import { formatBytes } from '@/utils/systemUtils'
 
 export const debugDockerStats = (containerName: string, stats: ContainerStats): void => {
     if (process.env.NODE_ENV !== 'development') {
@@ -38,13 +39,6 @@ export const debugDockerStats = (containerName: string, stats: ContainerStats): 
     console.groupEnd()
 }
 
-function formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
 
 // Export a helper to enable/disable debug mode
 export const setDockerStatsDebug = (enabled: boolean): void => {

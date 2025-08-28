@@ -5,60 +5,60 @@ import { Typography } from './Typography'
 import { cn } from '@/utils/cn'
 
 interface ModalProps {
-    isOpen: boolean
-    onClose: () => void
-    title: string
-    children: ReactNode
-    size?: 'sm' | 'md' | 'lg'
+  isOpen: boolean
+  onClose: () => void
+  title: string
+  children: ReactNode
+  size?: 'sm' | 'md' | 'lg'
 }
 
 interface ConfirmationModalProps {
-    isOpen: boolean
-    onClose: () => void
-    onConfirm: () => void
-    title: string
-    message: string
-    confirmText?: string
-    cancelText?: string
-    variant?: 'danger' | 'warning' | 'info'
-    isLoading?: boolean
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => void
+  title: string
+  message: string
+  confirmText?: string
+  cancelText?: string
+  variant?: 'danger' | 'warning' | 'info'
+  isLoading?: boolean
 }
 
 const modalSizes = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl'
+  sm: 'max-w-md',
+  md: 'max-w-lg',
+  lg: 'max-w-2xl'
 }
 
 const modalWrapperClasses = cn(
-    'fixed inset-0 z-50 overflow-y-auto',
-    'animate-fade-in'
+  'fixed inset-0 z-50 overflow-y-auto backdrop-blur-sm',
+  'animate-fade-in'
 )
 
 const modalBackdropClasses = cn(
-    'fixed inset-0',
-    'bg-black/30 dark:bg-black/50 backdrop-blur-sm transition-all duration-300'
+  'fixed inset-0',
+  'bg-black/30 dark:bg-black/50 transition-all duration-200'
 )
 
 const modalContainerClasses = cn(
-    'flex min-h-full items-center justify-center p-4'
+  'flex min-h-full items-center justify-center p-4'
 )
 
 const modalContentClasses = cn(
-    'relative w-full',
-    'bg-white dark:bg-gray-800',
-    'rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700',
-    'transform transition-all duration-300',
-    'animate-scale-in'
+  'relative w-full',
+  'bg-white dark:bg-gray-800',
+  'rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700',
+  'transform transition-all duration-300',
+  'animate-scale-in'
 )
 
 const modalHeaderClasses = cn(
-    'flex items-center justify-between p-4',
-    'border-b border-gray-200 dark:border-gray-700'
+  'flex items-center justify-between p-4',
+  'border-b border-gray-200 dark:border-gray-700'
 )
 
 const modalBodyClasses = cn(
-    'p-4'
+  'p-4'
 )
 
 export class Modal extends Component<ModalProps> {
@@ -97,14 +97,14 @@ export class Modal extends Component<ModalProps> {
 
     return (
       <div className={modalWrapperClasses}>
-        <div 
-          className={modalBackdropClasses} 
+        <div
+          className={modalBackdropClasses}
           onClick={onClose}
           aria-hidden="true"
         />
 
         <div className={modalContainerClasses}>
-          <div 
+          <div
             className={cn(modalContentClasses, modalSizes[size])}
             role="dialog"
             aria-modal="true"

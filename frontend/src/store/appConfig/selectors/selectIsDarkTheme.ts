@@ -1,6 +1,6 @@
 import { RootState } from "@/store";
 
-export const selectIsDarkTheme = (state: RootState) => {
+export const selectIsDarkTheme = (state: RootState): boolean => {
     const theme = state.appConfig.theme;
 
     if (theme === 'auto') {

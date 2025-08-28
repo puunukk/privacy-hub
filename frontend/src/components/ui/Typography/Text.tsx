@@ -1,30 +1,52 @@
 import { } from 'react'
-import { getCommonTypographyClasses, type BaseTypographyProps } from './Typography'
+import { 
+  getVariantClasses, 
+  weightClasses,
+  alignClasses,
+  type BaseTypographyProps 
+} from './Typography'
 import { cn } from '@/utils/cn'
 
 interface TextProps extends BaseTypographyProps {
-    size?: 'xs' | 'sm' | 'base' | 'lg'
-    as?: keyof JSX.IntrinsicElements
+  as?: keyof JSX.IntrinsicElements
+  [key: string]: any // Allow other HTML attributes
 }
 
-const textSizeClasses = {
-    xs: 'text-xs',
-    sm: 'text-sm',
-    base: 'text-base',
-    lg: 'text-lg'
-}
-
-export const Text = ({ size = 'sm', as = 'span', children, color, weight, align, className, ...props }: TextProps) => {
+export const Text = ({ 
+  variant = 'body',
+  as = 'span', 
+  children, 
+  color, 
+  weight, 
+  align, 
+  className, 
+  ...restProps 
+}: TextProps) => {
   const Component = as
 
+  // Remove all Typography-specific props that shouldn't be passed to DOM
+  const { 
+    variant: _variant, 
+    color: _color, 
+    weight: _weight, 
+    align: _align,
+    uppercase,
+    tracking,
+    lineHeight,
+    ...domProps 
+  } = restProps
+
   const classes = cn(
-    textSizeClasses[size],
+    getVariantClasses(variant, color),
     'transition-colors duration-200',
-    getCommonTypographyClasses(color, weight, align, className)
+    // Only apply additional styles if variant doesn't cover everything
+    weight && !variant && weightClasses[weight],
+    align && alignClasses[align],
+    className
   )
 
   return (
-    <Component className={classes} {...props}>
+    <Component className={classes} {...domProps}>
       {children}
     </Component>
   )

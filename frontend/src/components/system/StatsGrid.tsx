@@ -1,6 +1,6 @@
 import { Server, Activity, Cpu, MemoryStick } from 'lucide-react'
 import type { DockerInfo } from '@/types/docker'
-import { formatBytes } from '@/utils/formatBytes'
+import { formatBytes } from '@/utils/systemUtils'
 
 interface StatsGridProps {
   dockerInfo: DockerInfo

@@ -1,24 +1,21 @@
 import { put } from 'redux-saga/effects'
 import { PayloadAction } from '@reduxjs/toolkit'
+import type { PutEffect } from 'redux-saga/effects'
 
 import { setTheme } from '@/store/appConfig/appConfigSlice'
-import { applyTheme } from './applyTheme'
+import type { Theme } from '@/store/appConfig/types'
+import { logger } from '@/utils/logger'
 
-function* setThemeSaga(action: PayloadAction<{ theme: 'light' | 'dark' | 'auto' }>): Generator {
+export function* setThemeSaga(
+    action: PayloadAction<{ theme: Theme }>
+): Generator<PutEffect, void, unknown> {
     const { theme } = action.payload
 
     try {
-        // Update Redux store first
+        // Update Redux store (reducer handles DOM and localStorage)
         yield put(setTheme({ theme }))
-
-        // Apply theme to DOM
-        yield* applyTheme(theme)
-
-        // Save to localStorage
-        localStorage.setItem('theme', theme)
+        logger.debug(`Theme changed to: ${theme}`)
     } catch (error) {
-        console.error('Failed to set theme:', error)
+        logger.error('Failed to set theme:', error)
     }
 }
-
-export { setThemeSaga }

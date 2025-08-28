@@ -1,5 +1,5 @@
 import { Component } from 'react'
-import { Server, X } from 'lucide-react'
+import { Server } from 'lucide-react'
 import type { DockerInfo } from '@/types/docker'
 import type { RealNetworkInfo } from '@/utils/network'
 import { SystemInfoCard } from './SystemInfoCard'
@@ -8,6 +8,7 @@ import { QuickAccessLinks } from './QuickAccessLinks'
 import { NetworkSetupCard } from '@/components/network'
 import { DnsSetupGuide } from '@/components/network/DnsSetupGuide'
 import { SearXngConfig } from './SearxngConfig'
+import { Modal } from '@/components/ui/Modal'
 
 interface SystemInfoProps {
   dockerInfo: DockerInfo | null
@@ -68,16 +69,16 @@ export class SystemInfo extends Component<SystemInfoProps, SystemInfoState> {
                   </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Hostname:</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Hostname:</span>
                       <span className="text-sm font-medium text-gray-900 dark:text-white">{networkInfo.hostname}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Host IP:</span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{networkInfo.hostIP}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Host IP:</span>
+                      <span className="text-lg font-mono font-bold text-blue-600 dark:text-blue-400">{networkInfo.hostIP}</span>
                     </div>
                     {networkInfo.macAddress && (
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">MAC Address:</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">MAC Address:</span>
                         <span className="text-sm font-mono text-gray-900 dark:text-white">{networkInfo.macAddress}</span>
                       </div>
                     )}
@@ -111,30 +112,14 @@ export class SystemInfo extends Component<SystemInfoProps, SystemInfoState> {
           )}
         </div>
 
-        {/* SearXNG Config Modal */}
-        {showSearxngConfig && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            onClick={this.closeSearxngConfig}
-          >
-            <div
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">SearXNG Configuration</h2>
-                <button
-                  type="button"
-                  onClick={this.closeSearxngConfig}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                </button>
-              </div>
-              <SearXngConfig />
-            </div>
-          </div>
-        )}
+        <Modal
+          isOpen={showSearxngConfig}
+          onClose={this.closeSearxngConfig}
+          title="SearXNG Configuration"
+          size="lg"
+        >
+          <SearXngConfig />
+        </Modal>
       </div>
     )
   }

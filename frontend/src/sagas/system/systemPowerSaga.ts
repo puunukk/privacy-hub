@@ -5,7 +5,7 @@ import { executeSystemCmd } from '@/api/executeSystemCmd'
 import { showNotification } from '@/store/appConfig/appConfigSlice'
 
 interface SystemPowerPayload {
-    command: 'restart' | 'shutdown' | 'force-shutdown'
+    command: 'restart' | 'shutdown' | 'force-shutdown' | 'force-restart' | 'restart-services'
 }
 
 function* systemPowerSaga(action: PayloadAction<SystemPowerPayload>): Generator {

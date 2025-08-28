@@ -36,8 +36,8 @@ export class NetworkSetupCard extends Component<NetworkSetupCardProps> {
               </a>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-blue-700 dark:text-blue-300">Gateway IP:</span>
-              <span className="text-sm font-mono font-semibold text-blue-900 dark:text-blue-100">{networkInfo.gateway}</span>
+              <span className="text-xs text-blue-700 dark:text-blue-300">Gateway IP:</span>
+              <span className="text-lg font-mono font-bold text-blue-900 dark:text-blue-100">{networkInfo.gateway}</span>
             </div>
             <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
               Click "Access Router" to configure DNS settings
@@ -45,16 +45,16 @@ export class NetworkSetupCard extends Component<NetworkSetupCardProps> {
           </div>
 
           {/* Network Details */}
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-500 dark:text-gray-400">Host IP:</span>
-            <span className="text-sm font-mono font-medium text-gray-900 dark:text-white">{networkInfo.hostIP}</span>
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-gray-500 dark:text-gray-400">Host IP:</span>
+            <span className="text-lg font-mono font-bold text-blue-600 dark:text-blue-400">{networkInfo.hostIP}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-gray-500 dark:text-gray-400">Subnet:</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">Subnet:</span>
             <span className="text-sm font-mono text-gray-900 dark:text-white">{networkInfo.subnet}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-gray-500 dark:text-gray-400">DHCP Client:</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">DHCP Client:</span>
             <span className={`text-sm font-medium ${networkInfo.isDhcpClient ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}`}>
               {networkInfo.isDhcpClient ? 'Yes' : 'Static IP'}
             </span>
@@ -77,8 +77,8 @@ export class NetworkSetupCard extends Component<NetworkSetupCardProps> {
             ) : (
               <div className="text-xs text-yellow-600 dark:text-yellow-400">
                 <p>⚠ Configure router to use Pi-hole DNS:</p>
-                <p className="font-mono mt-1">Primary DNS: {networkInfo.hostIP}</p>
-                <p className="font-mono">Secondary DNS: {networkInfo.gateway}</p>
+                <p className="mt-1">Primary DNS: <span className="font-mono font-bold text-sm text-blue-600 dark:text-blue-400">{networkInfo.hostIP}</span></p>
+                <p>Secondary DNS: <span className="font-mono font-bold text-sm text-yellow-700 dark:text-yellow-300">{networkInfo.gateway}</span></p>
               </div>
             )}
           </div>

@@ -1,6 +1,5 @@
 import { Component } from 'react'
 import { Text } from '@/components/ui/Typography'
-import { cn } from '@/utils/cn'
 
 interface ContainerResourcesProps {
   containerState: string
@@ -25,7 +24,7 @@ export class ContainerResources extends Component<ContainerResourcesProps> {
               CPU: <Text 
                 size="xs" 
                 weight="medium" 
-                color={isRunning ? "blue" : "muted"}
+                color={isRunning ? "info" : "muted"}
                 className="inline"
               >
                 {isRunning ? (cpuUsage || '~') : '-'}
@@ -40,7 +39,7 @@ export class ContainerResources extends Component<ContainerResourcesProps> {
               MEM: <Text 
                 size="xs" 
                 weight="medium" 
-                color={isRunning ? "green" : "muted"}
+                color={isRunning ? "success" : "muted"}
                 className="inline"
               >
                 {isRunning ? (memUsage || '~') : '-'}
@@ -65,7 +64,7 @@ export class ContainerResources extends Component<ContainerResourcesProps> {
               CPU: <Text 
                 size="xs" 
                 weight="medium" 
-                color={isRunning ? "blue" : "muted"}
+                color={isRunning ? "info" : "muted"}
                 className="inline"
               >
                 {isRunning ? (cpuUsage || '~') : '-'}
@@ -80,7 +79,7 @@ export class ContainerResources extends Component<ContainerResourcesProps> {
               MEM: <Text 
                 size="xs" 
                 weight="medium" 
-                color={isRunning ? "green" : "muted"}
+                color={isRunning ? "success" : "muted"}
                 className="inline"
               >
                 {isRunning ? (memUsage || '~') : '-'}

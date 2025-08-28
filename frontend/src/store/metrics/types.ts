@@ -12,12 +12,17 @@ export type MetricsStatus =
     | 'READY'
     | 'ERROR'
 
+// Memory info structure from backend
+export interface MemoryInfo {
+    total: number  // Total memory in KB
+    free: number   // Available memory in KB
+    used: number   // Used memory in KB
+}
+
 // Metrics types - matches backend API response
 export interface SystemMetrics {
     cpu_temp: number
-    memory_free: number
-    memory_total: number
-    memory_used: number
+    memory: MemoryInfo  // Changed from flat fields to nested object
     load_avg: string
     storage: {
         root_partition: {

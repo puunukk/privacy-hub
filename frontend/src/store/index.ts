@@ -5,6 +5,7 @@ import containerReducer from './docker/containerSlice'
 import appConfigReducer from './appConfig/appConfigSlice'
 import metricsReducer from './metrics/metricsSlice'
 import systemInfoReducer from './systemInfo/systemInfoSlice'
+import loopsReducer from './loops/loopsSlice'
 
 import rootSaga from '@/sagas'
 
@@ -18,6 +19,7 @@ export const store = configureStore({
     containers: containerReducer,
     metrics: metricsReducer,
     systemInfo: systemInfoReducer,
+    loops: loopsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

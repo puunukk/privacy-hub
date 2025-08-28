@@ -66,10 +66,10 @@ export interface AppConfig {
  */
 export const defaultConfig: AppConfig = {
   polling: {
-    metrics: 5000,    // 5 seconds
-    containers: 10000, // 10 seconds
-    heartbeat: 1000,   // 1 second
-    network: 30000     // 30 seconds
+    metrics: 5000,     // 5 seconds (reasonable for metrics)
+    containers: 15000, // 15 seconds (reduced from 10s)
+    heartbeat: 30000,  // 30 seconds normally (was 1s! Only goes to 1s when services down)
+    network: 60000     // 60 seconds (increased from 30s)
   },
   api: {
     timeout: 10000,    // 10 seconds
@@ -106,10 +106,10 @@ export const defaultConfig: AppConfig = {
 const environmentConfig: Partial<AppConfig> = {
   ...(process.env.NODE_ENV === 'development' && {
     polling: {
-      metrics: 3000,    // Faster polling in dev
-      containers: 5000,
-      heartbeat: 500,
-      network: 15000
+      metrics: 5000,     // 5 seconds in dev
+      containers: 10000, // 10 seconds in dev
+      heartbeat: 30000,  // 30 seconds normally (1s only when services down)
+      network: 30000     // 30 seconds in dev
     },
     dev: {
       debug: true,
@@ -119,10 +119,10 @@ const environmentConfig: Partial<AppConfig> = {
   }),
   ...(process.env.NODE_ENV === 'production' && {
     polling: {
-      metrics: 10000,   // Slower polling in production
-      containers: 15000,
-      heartbeat: 2000,
-      network: 60000
+      metrics: 10000,   // 10 seconds in production
+      containers: 30000, // 30 seconds in production
+      heartbeat: 60000,  // 60 seconds normally (1s only when services down)
+      network: 120000    // 2 minutes in production
     },
     dev: {
       debug: false,
