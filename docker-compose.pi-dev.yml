@@ -41,9 +41,9 @@ services:
       - ph_dev
     volumes:
       - valkey_data:/data
-    tmpfs:
-      - /tmp
-      - /var/log/valkey
+    # tmpfs: # Commented out to save memory
+      # - /tmp
+      # - /var/log/valkey
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 30s
@@ -72,9 +72,10 @@ services:
       - pihole_dnsmasq:/etc/dnsmasq.d
       - './pihole/data:/etc/pihole'
       - './pihole/dnsmasq:/etc/dnsmasq.d'
-    tmpfs:
-      - /var/log
-      - /tmp
+      - './logs/pihole:/var/log'
+    # tmpfs: # Commented out to save memory
+      # - /var/log
+      # - /tmp
     cap_add:
       - NET_ADMIN
       - NET_RAW
@@ -108,10 +109,11 @@ services:
     volumes:
       - searxng_data:/etc/searxng:rw
       - './searxng/data:/etc/searxng'
-    tmpfs:
-      - /var/log
-      - /tmp
-      - /var/cache
+      - './logs/searxng:/var/log'
+    # tmpfs: # Commented out to save memory
+      # - /var/log
+      # - /tmp
+      # - /var/cache
     depends_on:
       - valkey
     restart: unless-stopped
@@ -128,7 +130,7 @@ services:
   go_backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile # Use development Dockerfile, not .build
+      dockerfile: Dockerfile.dev # Use dev Dockerfile with live reload
     container_name: ${BACKEND_CONTAINER_NAME:-PH_API_Backend_Dev}
     hostname: ${BACKEND_CONTAINER_NAME:-privacy_hub_go_backend_dev}
     ports:
@@ -139,17 +141,21 @@ services:
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=8111
     volumes:
-      # Source code for live development
+      # Mount source code for live reload in dev mode
       - './backend:/app'
-      # Host system access for monitoring (development) - Fixed host mount paths
+      # Host system access for monitoring (development)
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /etc:/host/etc:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       # Development data
       - go_backend_data:/app/data
-    tmpfs:
-      - /tmp
+      - './logs/backend:/app/logs'
+    # Give container privileges to access host info
+    privileged: true
+    pid: host  # Share PID namespace with host
+    # tmpfs: # Commented out to save memory
+      # - /tmp
     depends_on:
       - docker-proxy
     restart: unless-stopped
@@ -188,8 +194,8 @@ services:
       - vscode_server_data:/home/node/.vscode-server
     command: sh -c "mkdir -p /app/node_modules && chown -R node:node /app/node_modules /app && su node -c 'cd /app && npm install && npm run dev:debug'"
     user: "0:0"  # Start as root to fix permissions, then switch to node user
-    tmpfs:
-      - /tmp
+    # tmpfs: # Commented out to save memory
+      # - /tmp
     restart: unless-stopped
     networks:
       - ph_dev
@@ -220,8 +226,8 @@ services:
       LOG_LEVEL: ${DOCKER_PROXY_LOG_LEVEL:-debug} # More verbose for development
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    tmpfs:
-      - /tmp
+    # tmpfs: # Commented out to save memory
+      # - /tmp
     restart: unless-stopped
     networks:
       - ph_dev
@@ -247,10 +253,11 @@ services:
       - "443:443" # HTTPS
     volumes:
       - './certs:/etc/nginx/ssl'
+      - './logs:/var/log/nginx'
       # Using config built into container - no volume override needed
-    tmpfs:
-      - /var/log/nginx
-      - /tmp
+    # tmpfs: # Commented out to save memory
+      # - /var/log/nginx
+      # - /tmp
     restart: unless-stopped
     # NO DEPENDENCIES - NGINX starts first and handles missing services gracefully
     networks:

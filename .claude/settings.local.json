@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mv:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(ping:*)",
+      "Bash(nslookup:*)",
+      "Bash(grep:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.pi-hole.net)",
+      "Bash(node:*)",
+      "Bash(npm:*)"
+    ],
+    "deny": [
+      "Bash(docker:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker-compose:*)",
+      "Bash(docker compose-plugin:*)",
+      "Bash(docker-compose-plugin:*)"
+    ],
+    "ask": [
+      "Bash(docker:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker-compose:*)",
+      "Bash(docker compose-plugin:*)",
+      "Bash(docker-compose-plugin:*)"
+    ]
+  }
+}

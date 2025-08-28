@@ -157,7 +157,7 @@ services:
       IMAGES: 1
       INFO: 1
       STATS: 1 # Enable container statistics (CPU/memory usage)
-      NETWORKS: 0
+      NETWORKS: 1 # Enable network access for /docker-api/networks endpoint
       VOLUMES: 0
       SERVICES: 0
       TASKS: 0

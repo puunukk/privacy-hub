@@ -1,0 +1,27 @@
+{
+    "name": "Privacy Hub Frontend",
+    "dockerComposeFile": "../docker-compose.dev.yml",
+    "service": "frontend",
+    "workspaceFolder": "/app",
+    "shutdownAction": "none",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "bradlc.vscode-tailwindcss"
+            ],
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "typescript.tsdk": "/app/node_modules/typescript/lib"
+            }
+        }
+    },
+    "mounts": [
+        "source=${localWorkspaceFolder}/frontend,target=/app,type=bind,consistency=cached",
+        "source=privacy-hub_vscode_server_data,target=/home/node/.vscode-server,type=volume"
+    ],
+    "forwardPorts": [
+        3000
+    ],
+    "remoteUser": "node"
+}
