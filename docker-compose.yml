@@ -51,8 +51,9 @@ services:
     volumes:
       - pihole_data:/etc/pihole
       - pihole_dnsmasq:/etc/dnsmasq.d
+      # Centralized logging - persist logs to host
+      - ./logs/pihole:/var/log
     tmpfs:
-      - /var/log
       - /tmp
     cap_add:
       - NET_ADMIN
@@ -98,9 +99,10 @@ services:
       - "443:443"     # HTTPS
     volumes:
       - './nginx/ssl:/etc/nginx/ssl'
+      # Centralized logging - persist logs to host
+      - ./logs/nginx:/var/log/nginx
       # Config built into container - no volume override needed
     tmpfs:
-      - /var/log/nginx
       - /tmp
     restart: unless-stopped
     depends_on:

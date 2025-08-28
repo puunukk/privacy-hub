@@ -4,7 +4,27 @@
 # Keep the example file
 !.env.example
 
-# Runtime data and logs
+# ================================
+# CENTRALIZED DIRECTORY STRUCTURE  
+# ================================
+
+# All logs go to logs/ directory - ignore contents but keep structure
+logs/*
+!logs/.gitkeep
+!logs/*/
+!logs/*/.gitkeep
+
+# All build outputs and data go to data/ directory - ignore contents but keep structure  
+data/*
+!data/.gitkeep
+!data/*/
+!data/*/.gitkeep
+
+# ================================
+# SERVICE-SPECIFIC IGNORES
+# ================================
+
+# Runtime service data (legacy paths - gradually migrate to data/)
 pihole/data/
 searxng/data/
 nginx/ssl/
@@ -14,6 +34,8 @@ backups/
 
 # Docker volumes and temporary files
 docker-compose.override.yml
+
+# Legacy scattered log files (gradually migrate to logs/)
 *.log
 *.tmp
 
@@ -34,17 +56,22 @@ Thumbs.db
 #!nginx/nginx.conf
 #!scripts/
 
-# --- General frontend / tooling outputs ---
+# ================================
+# BUILD ARTIFACTS & DEPENDENCIES
+# ================================
+
 # Node.js dependencies (any level)
 node_modules/
 **/node_modules/
 
-# Build artifacts
+# Build artifacts (legacy - new builds should go to data/)
 dist/
 **/dist/
 build/
 **/build/
 out/
+tmp/
+**/tmp/
 
 # Framework/tool caches
 .cache/

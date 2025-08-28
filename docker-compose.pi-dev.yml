@@ -41,9 +41,10 @@ services:
       - ph_dev
     volumes:
       - valkey_data:/data
+      # Centralized logging - persist logs to host
+      - ./logs/redis:/var/log/valkey
     # tmpfs: # Commented out to save memory
       # - /tmp
-      # - /var/log/valkey
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 30s
@@ -150,7 +151,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       # Development data
       - go_backend_data:/app/data
-      - './logs/backend:/app/logs'
+      - './logs/go-backend:/app/logs'
     # Give container privileges to access host info
     privileged: true
     pid: host  # Share PID namespace with host

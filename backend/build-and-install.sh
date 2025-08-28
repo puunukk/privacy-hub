@@ -4,22 +4,29 @@ set -e
 
 echo "🔨 Building Privacy Hub Backend..."
 
-# Build the binary using Docker
-docker build -f Dockerfile.build -t privacy-hub-backend-build .
+# Ensure centralized directories exist
+mkdir -p ../logs/go-backend ../data/go-backend
+
+# Build the binary using Docker (redirect errors to centralized log)
+echo "🏗️ Building with Docker (logging to ../logs/go-backend/build-errors.log)..."
+if ! docker build -f Dockerfile.build -t privacy-hub-backend-build . 2>> ../logs/go-backend/build-errors.log; then
+    echo "❌ Build failed! Check logs: ../logs/go-backend/build-errors.log"
+    exit 1
+fi
 
 # Create a temporary container to extract the binary
-echo "📦 Extracting binary..."
+echo "📦 Extracting binary to centralized data directory..."
 CONTAINER_ID=$(docker create privacy-hub-backend-build)
-docker cp $CONTAINER_ID:/privacy-hub-backend ./privacy-hub-backend
+docker cp $CONTAINER_ID:/privacy-hub-backend ../data/go-backend/privacy-hub-backend
 docker rm $CONTAINER_ID
 
 # Make it executable
-chmod +x ./privacy-hub-backend
+chmod +x ../data/go-backend/privacy-hub-backend
 
 # Create service directory
 echo "📁 Installing service..."
 sudo mkdir -p /opt/privacy-hub-backend
-sudo cp ./privacy-hub-backend /opt/privacy-hub-backend/
+sudo cp ../data/go-backend/privacy-hub-backend /opt/privacy-hub-backend/
 
 # Create systemd service file
 sudo tee /etc/systemd/system/privacy-hub-backend.service > /dev/null <<EOF

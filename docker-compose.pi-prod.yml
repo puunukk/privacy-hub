@@ -63,6 +63,8 @@ services:
     volumes:
       - pihole_data:/etc/pihole
       - pihole_dnsmasq:/etc/dnsmasq.d
+      # Centralized logging - persist logs to host
+      - ./logs/pihole:/var/log
     tmpfs:
       - /tmp
     security_opt:
@@ -133,6 +135,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       # Data
       - go_backend_data:/app/data
+      # Centralized logging - persist logs to host
+      - ./logs/go-backend:/app/logs
     tmpfs:
       - /tmp
     security_opt:
