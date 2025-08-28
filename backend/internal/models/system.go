@@ -30,11 +30,21 @@ type StorageDevice struct {
 	Mountpoint string `json:"mountpoint"`  // Where it's mounted
 }
 
-// NetworkInfo holds network configuration
+// NetworkInfo holds network configuration with multiple detection methods for robust fallback
 type NetworkInfo struct {
-	IP      string // Primary IP address
-	Gateway string // Default gateway
-	DNS     string // Primary DNS server
+	// Basic system information
+	Hostname    string `json:"hostname"`    // Host system hostname
+	Uptime      string `json:"uptime"`      // Host system uptime in seconds
+	DNS         string `json:"dns"`         // Primary DNS server
+	IsContainer bool   `json:"isContainer"` // True when backend runs in container
+	
+	// Main network detection results
+	IP      string `json:"ip"`      // Host IP address
+	Gateway string `json:"gateway"` // Host gateway address
+	
+	// Container Network Information (for debugging)
+	ContainerIP      string `json:"container_ip,omitempty"`      // Docker container IP
+	ContainerGateway string `json:"container_gateway,omitempty"` // Docker bridge gateway
 }
 
 // PlatformInfo holds detected platform information (exported for debug endpoint)

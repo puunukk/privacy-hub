@@ -15,23 +15,19 @@ func Info(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get system information from services
-	systemSvc := services.NewSystemService()
-	networkSvc := services.NewNetworkService()
-	
+	// Use the PRIVILEGED network service with nsenter
+	networkSvc := services.NewPrivilegedNetworkService()
 	networkInfo := networkSvc.GetNetworkInfo()
 	
-	// Get platform info for container detection
-	platformSvc := services.NewPlatformService()
-	platformInfo := platformSvc.GetPlatformInfo()
-	
 	response := models.InfoResponse{
-		Hostname:    systemSvc.GetHostname(),
-		IP:          networkInfo.IP,
-		Gateway:     networkInfo.Gateway,
-		DNS:         networkInfo.DNS,
-		Uptime:      systemSvc.GetUptime(),
-		IsContainer: platformInfo.IsContainer,
+		Hostname:         networkInfo.Hostname,
+		IP:               networkInfo.IP,
+		Gateway:          networkInfo.Gateway,
+		DNS:              networkInfo.DNS,
+		Uptime:           networkInfo.Uptime,
+		IsContainer:      networkInfo.IsContainer,
+		ContainerIP:      networkInfo.ContainerIP,
+		ContainerGateway: networkInfo.ContainerGateway,
 	}
 	
 	json.NewEncoder(w).Encode(response)

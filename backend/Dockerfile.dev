@@ -1,0 +1,22 @@
+FROM golang:1.25-alpine
+
+# Install air for live reloading
+RUN go install github.com/air-verse/air@latest
+
+# Install system tools including nsenter for host namespace access
+RUN apk --no-cache add iproute2 util-linux procps
+
+WORKDIR /app
+
+# Copy go.mod for dependencies
+COPY go.mod ./
+RUN go mod download
+
+# Create mount points for host access
+RUN mkdir -p /host/proc /host/sys /host/etc
+
+# Expose port
+EXPOSE 8111
+
+# Use air for live reloading
+CMD ["air", "-c", ".air.toml"]

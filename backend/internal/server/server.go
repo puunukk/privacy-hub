@@ -32,7 +32,7 @@ func (s *Server) setupRoutes() {
 
 	// System monitoring endpoints
 	s.mux.Handle("/metrics", api(http.HandlerFunc(handlers.Metrics)))
-	s.mux.Handle("/info", api(http.HandlerFunc(handlers.Info)))
+	s.mux.Handle("/system", api(http.HandlerFunc(handlers.Info)))
 	
 	// Command endpoints
 	s.mux.Handle("/cmd/", api(http.HandlerFunc(handlers.Commands)))

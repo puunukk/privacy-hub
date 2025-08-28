@@ -12,14 +12,21 @@ type MetricsResponse struct {
 	Timestamp   int64       `json:"timestamp"`    // Unix timestamp
 }
 
-// InfoResponse contains static system information that rarely changes
+// InfoResponse contains system information with multiple detection methods for robust fallback
 type InfoResponse struct {
-	Hostname string `json:"hostname"` // System hostname
-	IP       string `json:"ip"`       // Primary IP address
-	Gateway  string `json:"gateway"`  // Default gateway
-	DNS      string `json:"dns"`      // Primary DNS server
-	Uptime   string `json:"uptime"`   // System uptime in seconds
-	IsContainer bool `json:"isContainer"` // Whether the system is running in a container
+	// Host System Information
+	Hostname    string `json:"hostname"`    // Host system hostname (e.g. "otsi")
+	Uptime      string `json:"uptime"`      // Host system uptime in seconds
+	DNS         string `json:"dns"`         // Primary DNS server
+	IsContainer bool   `json:"isContainer"` // True when backend runs in container
+	
+	// Main network detection results
+	IP      string `json:"ip"`      // Host IP address
+	Gateway string `json:"gateway"` // Host gateway address
+	
+	// Container Network Information (for debugging)
+	ContainerIP      string `json:"container_ip,omitempty"`      // Docker container IP
+	ContainerGateway string `json:"container_gateway,omitempty"` // Docker bridge gateway
 }
 
 // CommandResponse indicates command execution status
