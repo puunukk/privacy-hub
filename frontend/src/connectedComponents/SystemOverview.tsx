@@ -46,7 +46,7 @@ class SystemOverview extends PureComponent<SystemOverviewProps> {
     return (
       <div className="px-4">
         {/* Main Dashboard Grid - 6 columns on large screens */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
 
           {/* Temperature - Featured Card */}
           <ModernMetricCard
@@ -140,3 +140,4 @@ const mapStateToProps = (state: RootState) => ({
 })
 
 export const ConnectedSystemOverview = connect(mapStateToProps)(SystemOverview)
+export default ConnectedSystemOverview

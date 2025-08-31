@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"log"
 	"os/exec"
 	"strings"
 	"privacy-hub-backend/internal/models"
@@ -48,6 +49,7 @@ func (s *PrivilegedNetworkService) getHostNetwork() (hostname, ip string) {
 	
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		log.Printf("nsenter command failed: %v, output: %s", err, string(output))
 		return s.getHostnameFromFile(), ""
 	}
 	
@@ -87,6 +89,7 @@ func (s *PrivilegedNetworkService) getHostGateway() string {
 	
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		log.Printf("nsenter gateway command failed: %v, output: %s", err, string(output))
 		return s.getFallbackGateway()
 	}
 	
@@ -115,7 +118,7 @@ func (s *PrivilegedNetworkService) getFallbackGateway() string {
 	// DNS is often the gateway
 	dns := s.getDNS()
 	if dns != "" && strings.HasSuffix(dns, ".1") {
-		fmt.Printf("Using DNS as gateway fallback: %s\n", dns)
+		log.Printf("Using DNS as gateway fallback: %s", dns)
 		return dns
 	}
 	return ""

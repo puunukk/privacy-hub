@@ -4,7 +4,7 @@ import { Server, Settings } from 'lucide-react'
 import { SectionWrapper } from '@/components/ui/SectionWrapper'
 import { StorageOverview } from '@/components/dashboard/StorageOverview'
 import { NetworkInfo } from '@/components/dashboard/NetworkInfo'
-import { SystemActionsModal } from '@/components/dashboard/SystemActionsModal'
+import SystemActionsModal from '@/components/dashboard/SystemActionsModal'
 import type { RootState } from '@/store'
 
 interface SystemInfoSectionProps {

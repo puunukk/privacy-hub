@@ -8,17 +8,13 @@ import { loadSystemInfoSaga } from './loadSystemInfoSaga'
 import { loadSystemMetricsSaga } from './loadSystemMetricsSaga'
 
 export default function* systemSaga(): Generator<any, void, any> {
-    // System power commands
-    yield takeEvery([
-        SystemActionTypes.SYSTEM_SHUTDOWN_REQUEST,
-        SystemActionTypes.SYSTEM_REBOOT_REQUEST,
-        SystemActionTypes.SYSTEM_FORCE_SHUTDOWN_REQUEST
-    ], systemPowerSaga)
-    
+    // Single command handler for all system commands
+    yield takeEvery(SystemActionTypes.EXECUTE_SYSTEM_COMMAND, systemPowerSaga)
+
     // Handle direct fetch requests (for initial load and manual refresh)
     yield takeLatest(SystemInfoActionTypes.FETCH_SYSTEM_INFO_REQUEST, loadSystemInfoSaga)
     yield takeLatest(MetricsActionTypes.FETCH_METRICS_REQUEST, loadSystemMetricsSaga)
-    
+
     // NOTE: Continuous polling is handled by UnifiedLoopManager
     // These listeners are for initial loads and manual refreshes only
 }

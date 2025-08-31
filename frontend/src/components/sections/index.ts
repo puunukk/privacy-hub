@@ -4,5 +4,5 @@
 
 export { ConnectedDockerContainersSection } from './DockerContainersSection'
 export { QuickAccessSection } from './QuickAccessSection'
-export { DataManagerSection } from './DataManagerSection'
-export { ConnectedLoopManagerSection } from './LoopManagerSection'
+export { DataManagerSection } from '../../connectedComponents/DataManagerSection'
+export { ConnectedLoopManagerSection } from '../../connectedComponents/LoopManagerSection'

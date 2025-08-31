@@ -5,7 +5,7 @@ import { Dispatch } from '@reduxjs/toolkit'
 
 import { Typography } from '@/components/ui/Typography'
 import { Button } from '@/components/ui/Button'
-import { SystemActionsModal } from '@/components/dashboard/SystemActionsModal'
+import SystemActionsModal from '@/components/dashboard/SystemActionsModal'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 import { cn } from '@/utils/cn'

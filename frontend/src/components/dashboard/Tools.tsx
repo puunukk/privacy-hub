@@ -66,6 +66,13 @@ export class Tools extends Component<{}, ToolsState> {
           icon: <Shield className="w-4 h-4" />,
           onClick: () => window.open('/admin', '_blank'),
           variant: 'danger' as const
+        },
+        {
+          name: 'Admin Panel under subdomain',
+          description: 'Manage DNS filtering',
+          icon: <Shield className="w-4 h-4" />,
+          onClick: () => window.open('https://pihole.otsi.local/admin', '_blank'),
+          variant: 'danger' as const
         }
       ]
     },

@@ -1,14 +1,23 @@
 import { Component } from 'react'
+import { connect } from 'react-redux'
 import { RotateCcw, Power, Zap, Terminal, RefreshCw } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Typography } from '@/components/ui/Typography'
 import { cn } from '@/utils/cn'
+import { SystemActionTypes, SystemCommands } from '@/sagas/system/types'
+import { Dispatch } from 'redux'
+import { RootState } from '@/store'
 
-interface SystemActionsModalProps {
+interface SystemActionsModalOwnProps {
   isOpen: boolean
   onClose: () => void
   hostname?: string
+}
+
+interface SystemActionsModalProps extends SystemActionsModalOwnProps {
+  dispatch: Dispatch
+  runCmd: (command: SystemCommands) => void
 }
 
 interface SystemActionsModalState {
@@ -31,32 +40,24 @@ export class SystemActionsModal extends Component<SystemActionsModalProps, Syste
     this.setState(prev => ({ showAdvanced: !prev.showAdvanced }))
   }
 
-  executeAction = async (action: string, endpoint: string) => {
-    this.setState({ isExecuting: true, executingAction: action })
-    
-    try {
-      const response = await fetch(endpoint, { method: 'POST' })
-      const result = await response.json()
-      
-      if (result.status === 'success') {
-        // Show success message or notification
-        console.log(`${action} executed successfully`)
-      } else {
-        console.error(`${action} failed:`, result.error)
-      }
-    } catch (error) {
-      console.error(`${action} error:`, error)
-    } finally {
+  dispatchSystemCommand = (command: SystemCommands, actionName: string) => {
+    //const { dispatch, runCmd } = this.props
+    this.setState({ isExecuting: true, executingAction: actionName })
+
+    this.props.runCmd(command)
+
+    // Auto-close modal after dispatching (sagas handle notifications)
+    setTimeout(() => {
       this.setState({ isExecuting: false, executingAction: null })
-      // Close modal after a delay for user feedback
-      setTimeout(() => this.props.onClose(), 1000)
-    }
+      this.props.onClose()
+    }, 1500)
   }
 
-  handleReboot = () => this.executeAction('Reboot', '/pi-system/reboot')
-  handleShutdown = () => this.executeAction('Shutdown', '/pi-system/shutdown')
-  handleForceShutdown = () => this.executeAction('Force Shutdown', '/pi-system/force-shutdown')
-  handleRestart = () => this.executeAction('Restart Services', '/pi-system/restart')
+  handleReboot = () => this.dispatchSystemCommand(SystemCommands.REBOOT, 'Reboot')
+  handleForceReboot = () => this.dispatchSystemCommand(SystemCommands.FORCE_REBOOT, 'Force Reboot')
+  handleShutdown = () => this.dispatchSystemCommand(SystemCommands.SHUTDOWN, 'Shutdown')
+  handleForceShutdown = () => this.dispatchSystemCommand(SystemCommands.FORCE_SHUTDOWN, 'Force Shutdown')
+  handleRestart = () => this.dispatchSystemCommand(SystemCommands.RESTART_SERVICES, 'Restart Services')
 
   render() {
     const { isOpen, onClose, hostname } = this.props
@@ -68,9 +69,9 @@ export class SystemActionsModal extends Component<SystemActionsModalProps, Syste
     )
 
     return (
-      <Modal 
-        isOpen={isOpen} 
-        onClose={onClose} 
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
         title="Pi System Commands"
         size="md"
       >
@@ -94,8 +95,22 @@ export class SystemActionsModal extends Component<SystemActionsModalProps, Syste
             <Typography.Title level={6} color="secondary" className="uppercase tracking-wider">
               System Control
             </Typography.Title>
-            
+
             <div className="space-y-3">
+              <Button
+                onClick={this.handleRestart}
+                disabled={isExecuting}
+                variant="secondary"
+                className={cn(
+                  buttonClasses,
+                  "bg-green-50 hover:bg-green-100 text-green-700 border border-green-200",
+                  "dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-300 dark:border-green-800"
+                )}
+              >
+                <RefreshCw className="w-5 h-5" />
+                <Typography.Text>Restart Services</Typography.Text>
+              </Button>
+
               <Button
                 onClick={this.handleReboot}
                 disabled={isExecuting}
@@ -111,6 +126,20 @@ export class SystemActionsModal extends Component<SystemActionsModalProps, Syste
               </Button>
 
               <Button
+                onClick={this.handleForceReboot}
+                disabled={isExecuting}
+                variant="secondary"
+                className={cn(
+                  buttonClasses,
+                  "bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200",
+                  "dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800"
+                )}
+              >
+                <RotateCcw className="w-5 h-5" />
+                <Typography.Text>Force Reboot System</Typography.Text>
+              </Button>
+
+              <Button
                 onClick={this.handleShutdown}
                 disabled={isExecuting}
                 variant="danger"
@@ -122,20 +151,6 @@ export class SystemActionsModal extends Component<SystemActionsModalProps, Syste
               >
                 <Power className="w-5 h-5" />
                 <Typography.Text>Shutdown</Typography.Text>
-              </Button>
-
-              <Button
-                onClick={this.handleRestart}
-                disabled={isExecuting}
-                variant="secondary"
-                className={cn(
-                  buttonClasses,
-                  "bg-green-50 hover:bg-green-100 text-green-700 border border-green-200",
-                  "dark:bg-green-900/20 dark:hover:bg-green-900/30 dark:text-green-300 dark:border-green-800"
-                )}
-              >
-                <RefreshCw className="w-5 h-5" />
-                <Typography.Text>Restart Services</Typography.Text>
               </Button>
             </div>
           </div>
@@ -191,3 +206,17 @@ export class SystemActionsModal extends Component<SystemActionsModalProps, Syste
     )
   }
 }
+
+const mapStateToProps = (_state: RootState) => ({})
+
+const mapDispatchToProps = (dispatch: Dispatch) => ({
+  runCmd: (command: SystemCommands) => dispatch({
+    type: SystemActionTypes.EXECUTE_SYSTEM_COMMAND,
+    payload: { command }
+  }),
+  dispatch
+})
+
+const connector = connect(mapStateToProps, mapDispatchToProps)
+export type ConnectedSystemActionsModal = typeof connector
+export default connector(SystemActionsModal)
